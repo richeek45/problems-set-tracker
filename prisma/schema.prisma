@@ -13,6 +13,34 @@ generator client {
   provider = "prisma-client-js"
 }
  
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Status {
+  TODO
+  INPROGRESS
+  COMPLETED
+  REPEAT
+}
+
+model Problem {
+  id            String        @id @default(cuid())
+  title         String
+  url           String 
+  tags          String[]
+  favourites    Boolean
+  status        Status
+  attempts      Int           @default(0)
+  difficulty    Difficulty    @default(EASY)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+}
+
+
+
 model User {
   id            String          @id @default(cuid())
   name          String?
