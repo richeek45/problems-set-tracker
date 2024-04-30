@@ -68,7 +68,7 @@ export interface ProblemRow {
   status: Status,
   problem_number: number,
   url: Url,
-  frequency: number,
+  attempts: number,
   difficulty: Difficulty,
   favourite: boolean
 }
@@ -83,7 +83,7 @@ const data: ProblemRow[] = [
       title: "Reverse an array",
       link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
     },
-    frequency: 0,
+    attempts: 3,
     difficulty: Difficulty.EASY,
     favourite: true,
   },
@@ -96,7 +96,7 @@ const data: ProblemRow[] = [
       title: "Reverse an array",
       link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
     },
-    frequency: 0,
+    attempts: 1,
     difficulty: Difficulty.EASY,
     favourite: false,
   },
@@ -109,7 +109,7 @@ const data: ProblemRow[] = [
       title: "Reverse an array",
       link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
     },
-    frequency: 0,
+    attempts: 0,
     difficulty: Difficulty.MEDIUM,
     favourite: true,
   },
@@ -122,7 +122,7 @@ const data: ProblemRow[] = [
       title: "Reverse an array",
       link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
     },
-    frequency: 0,
+    attempts: 2,
     difficulty: Difficulty.HARD,
     favourite: false,
   },
@@ -135,7 +135,7 @@ const data: ProblemRow[] = [
       title: "Reverse an array",
       link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
     },
-    frequency: 0,
+    attempts: 5,
     difficulty: Difficulty.EASY,
     favourite: true,
   },
@@ -148,7 +148,7 @@ const data: ProblemRow[] = [
       title: "Reverse an array",
       link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
     },
-    frequency: 0,
+    attempts: 0,
     difficulty: Difficulty.MEDIUM,
     favourite: false,
   },
@@ -192,13 +192,15 @@ export const columns: ColumnDef<ProblemRow>[] = [
     */
       const url = row.getValue("url") as Url;
       return (
-        <Link 
-          href={url.link ?? ""}
-          target="_blank"
-          rel="noopener noreferrer" 
-          className="text-right font-medium hover:underline hover:text-sky-300">
-          {url.title}
-        </Link>
+        <Button variant="link">
+          <Link 
+            href={url.link ?? ""}
+            target="_blank"
+            rel="noopener noreferrer" 
+            className="text-right font-medium hover:underline hover:text-sky-500">
+            {url.title}
+          </Link>
+        </Button>
       )
     },
     filterFn: (row, columnId, filterValue) => {
@@ -252,6 +254,21 @@ export const columns: ColumnDef<ProblemRow>[] = [
       variant="ghost"
       size="sm"
     >{row.getValue("favourite") ? <Star fill="#FBB03B" stroke="#FBB03B" /> : <Star stroke="#FBB03B" />}</Button>
+  },
+  {
+    accessorKey: "attempts",
+    sortingFn: "alphanumeric",
+    header: ({ column }) => (
+      <Button 
+        variant="ghost"
+        onClick={() => column.toggleSorting()}>
+          Attempts
+          <ArrowUpDown />
+        </Button>
+    ),
+    cell: ({ row }) => {
+      return <div>{row.getValue("attempts")}</div>
+    }
   },
 
   {
@@ -328,10 +345,7 @@ export const DataTableSet = () => {
         <InputFile />
         <CreateListItem />
       </div>
-      {/* 
-      <TableHead>Frequency</TableHead>
-      <TableHead>Time</TableHead>
-      */}
+      {/* <TableHead>Timer</TableHead> */}
 
       <div className="flex items-center py-4">
         <Input 
