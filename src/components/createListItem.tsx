@@ -114,10 +114,6 @@ export default function CreateListItem() {
   const router = useRouter();
   const utils = api.useUtils();
 
-
-  // const allProblems = api.problem.getAllProblems.useQuery();
-  // console.log(allProblems.data, "...allProblems....")
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
