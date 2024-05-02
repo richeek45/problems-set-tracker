@@ -42,6 +42,7 @@ import Link from "next/link"
 import { api } from "~/trpc/react"
 import { Difficulty, Status } from "@prisma/client"
 import { useRouter } from "next/navigation"
+import { ColumnFieldSelection } from "./columnFieldSelection"
 
 type SortMap = {
   [key in Difficulty]: number
@@ -75,6 +76,7 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
     pageSize: 4
   });
   const [rowSelection, setRowSelection] = useState({});
+  const [columnFilterSelection, setColumnFilterSelection] = useState("url");
 
   const table = useReactTable({
     data, 
@@ -115,13 +117,14 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
       <div className="flex items-center py-4">
         <Input 
           placeholder="Filter questions...."
-          value={table.getColumn("tags")?.getFilterValue() as string ?? ""}
+          value={table.getColumn(columnFilterSelection)?.getFilterValue() as string ?? ""}
           onChange={(event) => {
             console.log(event.target.value)
-            table.getColumn("tags")?.setFilterValue(event.target.value)
+            table.getColumn(columnFilterSelection)?.setFilterValue(event.target.value)
           }}
           className="max-w-sm"
         />
+        <ColumnFieldSelection columnFilterSelection={columnFilterSelection} setColumnFilterSelection={setColumnFilterSelection} />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -342,7 +345,7 @@ export default function ListContent() {
       }
     },
     {
-      accessorKey: "favourite",
+      accessorKey: "favourites",
       header: ({ column }) => {
         return (
           <Button 
@@ -358,10 +361,9 @@ export default function ListContent() {
         variant="ghost"
         size="sm"
         onClick={() => {
-          console.log(row.getValue("favourite"));
-          toggleFavourite.mutate({ favourite: row.original.favourites, id: row.original.id })
+          toggleFavourite.mutate({ favourite: row.getValue("favourites"), id: row.original.id })
         }}
-      >{row.original.favourites ? <Star fill="#FBB03B" stroke="#FBB03B" /> : <Star stroke="#FBB03B" />}</Button>
+      >{row.getValue("favourites") ? <Star fill="#FBB03B" stroke="#FBB03B" /> : <Star stroke="#FBB03B" />}</Button>
     },
     {
       accessorKey: "attempts",
