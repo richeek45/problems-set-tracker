@@ -1,5 +1,5 @@
 import { z } from "zod"; 
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { Difficulty, Status } from "@prisma/client";
 
 const formSchema = z.object({
@@ -27,7 +27,7 @@ export const problemRouter = createTRPCRouter({
     const problems = await ctx.db.problem.findMany();
     return problems;
   }),
-  createOneProblem: publicProcedure
+  createOneProblem: protectedProcedure
   .input(formSchema)
   .mutation(async ({ ctx, input }) => {
     const { title, url, difficulty, status, tags, attempts, favourites } = input;

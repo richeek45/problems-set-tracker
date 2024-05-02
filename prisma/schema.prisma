@@ -27,16 +27,17 @@ enum Status {
 }
 
 model Problem {
-  id            String        @id @default(cuid())
-  title         String
-  url           String 
-  tags          String[]
-  favourites    Boolean
-  status        Status
-  attempts      Int           @default(0)
-  difficulty    Difficulty    @default(EASY)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime?     @default(now())
+  id             String        @id @default(cuid())
+  problem_number Int          @default(autoincrement())
+  title          String
+  url            String 
+  tags           String[]
+  favourites     Boolean
+  status         Status
+  attempts       Int           @default(0)
+  difficulty     Difficulty    @default(EASY)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime?     @default(now())
 }
 
 
