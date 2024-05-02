@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Star } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Star, Clock } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
@@ -39,25 +39,15 @@ import {
 import CreateListItem from "./createListItem"
 import { InputFile } from "./inputFiles"
 import Link from "next/link"
-
-enum Status {
-  TODO = "TODO",
-  IN_PROGRESS = "IN_PROGRESS",
-  COMPLETED = "COMPLETED",
-  REPEAT = "REPEAT" 
-}
-
-enum Difficulty {
-  EASY = "EASY",
-  MEDIUM = "MEDIUM",
-  HARD = "HARD"
-}
+import { api } from "~/trpc/react"
+import { Difficulty, Status } from "@prisma/client"
 
 type SortMap = {
   [key in Difficulty]: number
 }
 
 type Url = {
+  problem_number: number,
   title: string,
   link: string,
 }
@@ -66,94 +56,13 @@ export interface ProblemRow {
   id: string,
   tags: string[],
   status: Status,
-  problem_number: number,
   url: Url,
   attempts: number,
   difficulty: Difficulty,
-  favourite: boolean
+  favourites: boolean,
+  createdAt: Date,
+  updatedAt: Date | null
 }
-
-const data: ProblemRow[] = [
-  {
-    id: "ljdflsd",
-    tags: ["array"],
-    problem_number: 1,
-    status: Status.TODO,
-    url: {
-      title: "Reverse an array",
-      link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
-    },
-    attempts: 3,
-    difficulty: Difficulty.EASY,
-    favourite: true,
-  },
-  {
-    id: "woiejis",
-    tags: ["string"],
-    problem_number: 1,
-    status: Status.TODO,
-    url: {
-      title: "Reverse an array",
-      link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
-    },
-    attempts: 1,
-    difficulty: Difficulty.EASY,
-    favourite: false,
-  },
-  {
-    id: "sdilj2k4",
-    tags: ["array"],
-    problem_number: 1,
-    status: Status.TODO,
-    url: {
-      title: "Reverse an array",
-      link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
-    },
-    attempts: 0,
-    difficulty: Difficulty.MEDIUM,
-    favourite: true,
-  },
-  {
-    id: "d93jke3",
-    tags: ["array"],
-    problem_number: 1,
-    status: Status.TODO,
-    url: {
-      title: "Reverse an array",
-      link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
-    },
-    attempts: 2,
-    difficulty: Difficulty.HARD,
-    favourite: false,
-  },
-  {
-    id: "30jdskds",
-    tags: ["array"],
-    problem_number: 1,
-    status: Status.TODO,
-    url: {
-      title: "Reverse an array",
-      link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
-    },
-    attempts: 5,
-    difficulty: Difficulty.EASY,
-    favourite: true,
-  },
-  {
-    id: "3funaad",
-    tags: ["array"],
-    problem_number: 1,
-    status: Status.TODO,
-    url: {
-      title: "Reverse an array",
-      link: "https://www.geeksforgeeks.org/program-to-reverse-an-array/",
-    },
-    attempts: 0,
-    difficulty: Difficulty.MEDIUM,
-    favourite: false,
-  },
-
-]
 
 export const columns: ColumnDef<ProblemRow>[] = [
   {
@@ -198,7 +107,7 @@ export const columns: ColumnDef<ProblemRow>[] = [
             target="_blank"
             rel="noopener noreferrer" 
             className="text-right font-medium hover:underline hover:text-sky-500">
-            {url.title}
+            {url.problem_number}. {url.title}
           </Link>
         </Button>
       )
@@ -211,7 +120,12 @@ export const columns: ColumnDef<ProblemRow>[] = [
   {
     accessorKey: "tags",
     header: "Tags",
-    cell: ({ row }) => <div>{row.getValue("tags")}</div>
+    cell: ({ row }) => <div>{row.getValue("tags")}</div>,
+    filterFn: (row, columnId, filterValue) => {
+      // tags is an array field - filter based on match of array values...
+      const tags = row.original.tags; 
+      return tags.some((tag) =>  (tag.includes(filterValue)));
+    }
   },
   {
     accessorKey: "difficulty",
@@ -289,6 +203,12 @@ export const columns: ColumnDef<ProblemRow>[] = [
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
+                Mark as Completed
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Start the timer <span><Clock/></span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem>
@@ -305,7 +225,7 @@ export const columns: ColumnDef<ProblemRow>[] = [
   }
 ]
 
-export const DataTableSet = () => {
+export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: any[]}) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -345,15 +265,14 @@ export const DataTableSet = () => {
         <InputFile />
         <CreateListItem />
       </div>
-      {/* <TableHead>Timer</TableHead> */}
 
       <div className="flex items-center py-4">
         <Input 
           placeholder="Filter questions...."
-          value={table.getColumn("url")?.getFilterValue() as string ?? ""}
+          value={table.getColumn("tags")?.getFilterValue() as string ?? ""}
           onChange={(event) => {
             console.log(event.target.value)
-            table.getColumn("url")?.setFilterValue(event.target.value)
+            table.getColumn("tags")?.setFilterValue(event.target.value)
           }}
           className="max-w-sm"
         />
@@ -463,5 +382,26 @@ export const DataTableSet = () => {
 }
 
 export default function ListContent() {
-  return (<DataTableSet />)
+
+  const { data } = api.problem.getAllProblems.useQuery();
+
+  if (!data) return;
+
+  const allProblems = data.map((problem) => ({
+    id: problem.id,
+    status: problem.status,
+    tags: problem.tags,
+    attempts: problem.attempts,
+    difficulty: problem.difficulty,
+    favourites: problem.favourites,
+    createdAt: problem.createdAt,
+    updatedAt: problem.updatedAt,
+    url: {
+      problem_number: problem.problem_number,
+      title: problem.title,
+      link: problem.url
+    }
+  }));
+
+  return (<DataTableSet data={allProblems} columns={columns} />)
 }
