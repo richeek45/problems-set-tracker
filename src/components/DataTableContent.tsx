@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -41,6 +41,7 @@ import { InputFile } from "./inputFiles"
 import Link from "next/link"
 import { api } from "~/trpc/react"
 import { Difficulty, Status } from "@prisma/client"
+import { useRouter } from "next/navigation"
 
 type SortMap = {
   [key in Difficulty]: number
@@ -64,166 +65,6 @@ export interface ProblemRow {
   updatedAt: Date | null
 }
 
-export const columns: ColumnDef<ProblemRow>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox 
-        checked={table.getIsAllPageRowsSelected()}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox 
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: true,
-    enableColumnFilter: true,
-    enableHiding: false
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => <div className="capitalize">{row.getValue("status")}</div>
-  },
-  {
-    accessorKey: "url",
-    header: "Problem",
-    cell: ({ row }) => {
-
-    /*
-      Explaining the vulnerability issue for target="_blank" and adding ref="noopener noreferer"
-      https://stackoverflow.com/questions/50709625/link-with-target-blank-and-rel-noopener-noreferrer-still-vulnerable
-    */
-      const url = row.getValue("url") as Url;
-      return (
-        <Button variant="link">
-          <Link 
-            href={url.link ?? ""}
-            target="_blank"
-            rel="noopener noreferrer" 
-            className="text-right font-medium hover:underline hover:text-sky-500">
-            {url.problem_number}. {url.title}
-          </Link>
-        </Button>
-      )
-    },
-    filterFn: (row, columnId, filterValue) => {
-      const title = row.original.url.title;
-      return title.includes(filterValue);
-    }
-  },
-  {
-    accessorKey: "tags",
-    header: "Tags",
-    cell: ({ row }) => <div>{row.getValue("tags")}</div>,
-    filterFn: (row, columnId, filterValue) => {
-      // tags is an array field - filter based on match of array values...
-      const tags = row.original.tags; 
-      return tags.some((tag) =>  (tag.includes(filterValue)));
-    }
-  },
-  {
-    accessorKey: "difficulty",
-    sortingFn: (rowA, rowB, columnId) => {
-      
-      const sortMap: SortMap = { "EASY": 0, "MEDIUM": 1, "HARD": 2 };
-      const row1 = rowA.getValue("difficulty") as Difficulty;
-      const row2 = rowB.getValue("difficulty") as Difficulty;
-      return sortMap[row1] - sortMap[row2];
-    },
-    header: ({ column }) => {
-      return (
-        <Button 
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Difficulty
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-      )
-    },
-    cell: ({ row }) => {
-      return (<div>{row.getValue("difficulty")}</div>) 
-    }
-  },
-  {
-    accessorKey: "favourite",
-    header: ({ column }) => {
-      return (
-        <Button 
-          variant="ghost"
-          onClick={() => column.toggleSorting()}
-          >
-            Favourite
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-      )
-    },
-    cell: ({ row }) => <Button
-      variant="ghost"
-      size="sm"
-    >{row.getValue("favourite") ? <Star fill="#FBB03B" stroke="#FBB03B" /> : <Star stroke="#FBB03B" />}</Button>
-  },
-  {
-    accessorKey: "attempts",
-    sortingFn: "alphanumeric",
-    header: ({ column }) => (
-      <Button 
-        variant="ghost"
-        onClick={() => column.toggleSorting()}>
-          Attempts
-          <ArrowUpDown />
-        </Button>
-    ),
-    cell: ({ row }) => {
-      return <div>{row.getValue("attempts")}</div>
-    }
-  },
-
-  {
-    id: "action",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const x = row.original;
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Extra Section</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                Mark as Completed
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                Start the timer <span><Clock/></span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                Delete
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                Remove
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    }
-  }
-]
 
 export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: any[]}) => {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -248,6 +89,11 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
     onRowSelectionChange: setRowSelection,
     onPaginationChange: setPagination,
     rowCount: 6,
+    defaultColumn: {
+      size: 200, //starting column size
+      minSize: 50, //enforced during column resizing
+      maxSize: 250, //enforced during column resizing
+    },
     state: {
       sorting,
       columnFilters,
@@ -382,6 +228,184 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
 }
 
 export default function ListContent() {
+  const router = useRouter();
+  const utils = api.useUtils();
+
+  const toggleFavourite = api.problem.toggleProblemFavourite.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      utils.problem.getAllProblems.invalidate();
+    },
+    onError: (error) => {
+      const errorMessage = error.data?.zodError?.fieldErrors.content![0];
+      console.log(error, "Error.........");    }
+  });
+
+  const columns: ColumnDef<ProblemRow>[] = useMemo(() => [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox 
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox 
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: true,
+      enableColumnFilter: true,
+      enableHiding: false
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => <div className="capitalize">{row.getValue("status")}</div>
+    },
+    {
+      accessorKey: "url",
+      header: "Problem",
+      size: 50,
+      cell: ({ row }) => {
+  
+      /*
+        Explaining the vulnerability issue for target="_blank" and adding ref="noopener noreferer"
+        https://stackoverflow.com/questions/50709625/link-with-target-blank-and-rel-noopener-noreferrer-still-vulnerable
+      */
+        const url = row.getValue("url") as Url;
+        return (
+          <Button variant="link">
+            <Link 
+              href={url.link ?? ""}
+              target="_blank"
+              rel="noopener noreferrer" 
+              className="text-right font-medium hover:underline hover:text-sky-500">
+              {url.problem_number}. {url.title}
+            </Link>
+          </Button>
+        )
+      },
+      filterFn: (row, columnId, filterValue) => {
+        const title = row.original.url.title;
+        return title.includes(filterValue);
+      }
+    },
+    {
+      accessorKey: "tags",
+      header: "Tags",
+      cell: ({ row }) => <div>{row.getValue("tags")}</div>,
+      filterFn: (row, columnId, filterValue) => {
+        // tags is an array field - filter based on match of array values...
+        const tags = row.original.tags; 
+        return tags.some((tag) =>  (tag.includes(filterValue)));
+      }
+    },
+    {
+      accessorKey: "difficulty",
+      sortingFn: (rowA, rowB, columnId) => {
+        
+        const sortMap: SortMap = { "EASY": 0, "MEDIUM": 1, "HARD": 2 };
+        const row1 = rowA.getValue("difficulty") as Difficulty;
+        const row2 = rowB.getValue("difficulty") as Difficulty;
+        return sortMap[row1] - sortMap[row2];
+      },
+      header: ({ column }) => {
+        return (
+          <Button 
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+              Difficulty
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+        )
+      },
+      cell: ({ row }) => {
+        return (<div>{row.getValue("difficulty")}</div>) 
+      }
+    },
+    {
+      accessorKey: "favourite",
+      header: ({ column }) => {
+        return (
+          <Button 
+            variant="ghost"
+            onClick={() => column.toggleSorting()}
+            >
+              Favourite
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+        )
+      },
+      cell: ({ row }) => <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          console.log(row.getValue("favourite"));
+          toggleFavourite.mutate({ favourite: row.original.favourites, id: row.original.id })
+        }}
+      >{row.original.favourites ? <Star fill="#FBB03B" stroke="#FBB03B" /> : <Star stroke="#FBB03B" />}</Button>
+    },
+    {
+      accessorKey: "attempts",
+      sortingFn: "alphanumeric",
+      header: ({ column }) => (
+        <Button 
+          variant="ghost"
+          onClick={() => column.toggleSorting()}>
+            Attempts
+            <ArrowUpDown />
+          </Button>
+      ),
+      cell: ({ row }) => {
+        return <div>{row.getValue("attempts")}</div>
+      }
+    },
+  
+    {
+      id: "action",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const x = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Extra Section</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem>
+                  Mark as Completed
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  Start the timer <span><Clock/></span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  Delete
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  Remove
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      }
+    }
+  ],[])
 
   const { data } = api.problem.getAllProblems.useQuery();
 
@@ -402,6 +426,7 @@ export default function ListContent() {
       link: problem.url
     }
   }));
+  
 
   return (<DataTableSet data={allProblems} columns={columns} />)
 }

@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Difficulty, Status } from "@prisma/client"
-import { Controller, useForm } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { toast } from "~/components/ui/use-toast"
 import { z } from "zod"
 
@@ -31,7 +31,6 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { useState } from "react";
 
 interface InputParameters {
   title: string,

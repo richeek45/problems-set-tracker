@@ -24,6 +24,8 @@ const formSchema = z.object({
 export const problemRouter = createTRPCRouter({
 
   getAllProblems: publicProcedure.query(async ({ ctx }) => {
+    // skip: Value, take: value
+    // const { skip, take } = input;
     const problems = await ctx.db.problem.findMany();
     return problems;
   }),
@@ -37,5 +39,18 @@ export const problemRouter = createTRPCRouter({
       }});
     console.log(problem);
     return problem;
+  }),
+
+  toggleProblemFavourite: protectedProcedure
+  .input(z.object({ favourite: z.boolean(), id: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    const { favourite, id } = input;
+    return await ctx.db.problem.update({
+      data: { favourites: !favourite },
+      where: {
+        id
+      }
+    })
   })
+
 })
