@@ -88,7 +88,7 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     onPaginationChange: setPagination,
-    rowCount: 6,
+    rowCount: data.length,
     defaultColumn: {
       size: 200, //starting column size
       minSize: 50, //enforced during column resizing
@@ -238,8 +238,20 @@ export default function ListContent() {
     },
     onError: (error) => {
       const errorMessage = error.data?.zodError?.fieldErrors.content![0];
-      console.log(error, "Error.........");    }
+      console.log(error, "Error.........");    
+    }
   });
+
+  const markComplete = api.problem.markCompleted.useMutation({  
+    onSuccess: () => {
+    router.refresh();
+    utils.problem.getAllProblems.invalidate();
+    },
+    onError: (error) => {
+      const errorMessage = error.data?.zodError?.fieldErrors.content![0];
+      console.log(error, "Error.........");    
+    }
+  })
 
   const columns: ColumnDef<ProblemRow>[] = useMemo(() => [
     {
@@ -371,7 +383,7 @@ export default function ListContent() {
       id: "action",
       enableHiding: false,
       cell: ({ row }) => {
-        const x = row.original;
+        const rowValues = row.original;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -385,7 +397,16 @@ export default function ListContent() {
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem>
-                  Mark as Completed
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => markComplete.mutate({ 
+                      id: rowValues.id, 
+                      status: rowValues.status, 
+                      attempts: rowValues.attempts
+                    })}>
+                      Mark as Completed
+                  </Button>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   Start the timer <span><Clock/></span>

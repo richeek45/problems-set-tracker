@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { Difficulty, Status } from "@prisma/client";
 
+
 const formSchema = z.object({
   title: z.string().min(5, {
     message: "Title must be 5 characters long"
@@ -50,6 +51,21 @@ export const problemRouter = createTRPCRouter({
       where: {
         id
       }
+    })
+  }),
+
+  markCompleted: protectedProcedure
+  .input(z.object({ 
+    id: z.string(), 
+    attempts: z.number(), 
+    status: z.enum([Status.TODO, Status.INPROGRESS, Status.COMPLETED, Status.REPEAT]) 
+  }))
+  .mutation(async ({ ctx, input }) => {
+    const { id, attempts, status } = input;
+
+    return ctx.db.problem.update({
+      where: { id },
+      data: { attempts: attempts + 1, status: Status.COMPLETED }
     })
   })
 
