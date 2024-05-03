@@ -43,6 +43,7 @@ import { api } from "~/trpc/react"
 import { Difficulty, Status } from "@prisma/client"
 import { useRouter } from "next/navigation"
 import { ColumnFieldSelection } from "./columnFieldSelection"
+import ProblemSettingDropdown from "./ProblemSettingDropdown"
 
 type SortMap = {
   [key in Difficulty]: number
@@ -77,6 +78,7 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
   });
   const [rowSelection, setRowSelection] = useState({});
   const [columnFilterSelection, setColumnFilterSelection] = useState("url");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const table = useReactTable({
     data, 
@@ -111,10 +113,10 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
     <div className="w-full">
       <div className="flex items-center justify-between px-10 py-2">
         <InputFile />
-        <CreateListItem />
+        <CreateListItem type="add" isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} />
       </div>
 
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 px-2 gap-4">
         <Input 
           placeholder="Filter questions...."
           value={table.getColumn(columnFilterSelection)?.getFilterValue() as string ?? ""}
@@ -245,17 +247,6 @@ export default function ListContent() {
     }
   });
 
-  const markComplete = api.problem.markCompleted.useMutation({  
-    onSuccess: () => {
-    router.refresh();
-    utils.problem.getAllProblems.invalidate();
-    },
-    onError: (error) => {
-      const errorMessage = error.data?.zodError?.fieldErrors.content![0];
-      console.log(error, "Error.........");    
-    }
-  })
-
   const columns: ColumnDef<ProblemRow>[] = useMemo(() => [
     {
       id: "select",
@@ -306,8 +297,8 @@ export default function ListContent() {
         )
       },
       filterFn: (row, columnId, filterValue) => {
-        const title = row.original.url.title;
-        return title.includes(filterValue);
+        const title = row.original.url.title.toLowerCase();
+        return title.includes(filterValue.toLowerCase());
       }
     },
     {
@@ -368,6 +359,10 @@ export default function ListContent() {
     {
       accessorKey: "attempts",
       sortingFn: "alphanumeric",
+      filterFn: (row, columnId, filterValue) => {
+        const attempts = Number(row.original.attempts);
+        return attempts === Number(filterValue);
+      },
       header: ({ column }) => (
         <Button 
           variant="ghost"
@@ -380,51 +375,13 @@ export default function ListContent() {
         return <div>{row.getValue("attempts")}</div>
       }
     },
-  
     {
       id: "action",
       enableHiding: false,
       cell: ({ row }) => {
         const rowValues = row.original;
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Extra Section</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => markComplete.mutate({ 
-                      id: rowValues.id, 
-                      status: rowValues.status, 
-                      attempts: rowValues.attempts
-                    })}>
-                      Mark as Completed
-                  </Button>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Start the timer <span><Clock/></span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Delete
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Remove
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <ProblemSettingDropdown rowValues={rowValues} />
         )
       }
     }
