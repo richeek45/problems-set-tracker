@@ -31,6 +31,8 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+import { useEffect, useMemo, useState } from "react";
+import { TRPCError } from "@trpc/server";
 
 interface InputParameters {
   title: string,
@@ -109,7 +111,48 @@ const formSchema = z.object({
   }).min(2)
 })
 
-export default function CreateListItem() {
+export default function CreateListItem({ 
+  type, 
+  id, 
+  isDialogOpen,
+  setIsDialogOpen,
+  handleDropdownChange 
+} : { 
+  type: string, 
+  id?: string, 
+  isDialogOpen: boolean,
+  setIsDialogOpen: (value: boolean) => void,
+  handleDropdownChange?: (value: boolean, source: string) => void
+}) {
+
+
+  const dialogTitle = type === "edit" ? "Edit the Problem" : "Add New Problem";
+
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={(value) => {
+      setIsDialogOpen(value);
+      console.log("dialog is ", value);
+      if (handleDropdownChange) {
+        handleDropdownChange(value, "dialog");
+      }
+    }}>
+      <DialogTrigger asChild>
+        {type === "edit" ? <Button size="sm" variant="ghost">edit</Button> :  <Button size="sm" >Add New Problem</Button>}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px] h-[75%]">
+        <DialogHeader>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>
+            Fill the values for your problem. Click save when you&apos;re done.
+          </DialogDescription>
+        </DialogHeader>
+          {type === "edit" && id ? <EditProblemForm id={id} /> : <NewProblemForm /> }
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+const NewProblemForm = () => {
   const router = useRouter();
   const utils = api.useUtils();
 
@@ -141,13 +184,15 @@ export default function CreateListItem() {
     }
   })
 
-  const createNewProblem = (values: z.infer<typeof formSchema>) => {
+  const createNewProblem = async (values: z.infer<typeof formSchema>) => {
     console.log(values);
     const defaultParameters = { tags: [values.tags], favourites: false, attempts: 0 }
     const finalValues = { ...values, ...defaultParameters };
     console.log(finalValues)
 
     const { attempts, difficulty, favourites, status, tags, title, url } = finalValues;
+
+    await createProblem.mutate({ attempts, difficulty, favourites, status, tags, title, url });
 
     toast({
       title: "You submitted the following values:",
@@ -157,76 +202,167 @@ export default function CreateListItem() {
         </pre>
       ),
     })
-
-
-    createProblem.mutate({ attempts, difficulty, favourites, status, tags, title, url });
   }
 
   return (
-    <Dialog >
-      <DialogTrigger asChild>
-        <Button size="sm" >Add New Problem</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] h-[75%]">
-        <DialogHeader>
-          <DialogTitle>Add New Problem</DialogTitle>
-          <DialogDescription>
-            Fill the values for your problem. Click save when you&apos;re done.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(createNewProblem)} >
-            {inputFieldParameters.map(param => (
-              <div key={param.name}  className="h-[100px] mb-4">
-              <FormField
-                control={form.control}
-                name={param.name}
-                
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{param.formLabel}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={param.placeholder} {...field} />
-                    </FormControl>
-                    <FormMessage className="text-[14px]" />
-                  </FormItem>
-                )}
-              />
-            </div>
+    <Form {...form}>
+    <form onSubmit={form.handleSubmit(createNewProblem)} >
+      {inputFieldParameters.map(param => (
+        <div key={param.name}  className="h-[100px] mb-4">
+        <FormField
+          control={form.control}
+          name={param.name}
+          
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{param.formLabel}</FormLabel>
+              <FormControl>
+                <Input placeholder={param.placeholder} {...field} />
+              </FormControl>
+              <FormMessage className="text-[14px]" />
+            </FormItem>
+          )}
+        />
+      </div>
 
-            ))}
+      ))}
 
-            {selectFieldParameters.map(params => (
-              <div key={params.name} className="my-2">
-                <FormField
-                  name={params.name}
-                  render={({ field }) => (
-                    <FormItem>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={params.placeholder} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {params.options.map(value => (
-                            <SelectItem key={value} value={value}>{value.toUpperCase()}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            ))}
-            
-            <DialogFooter>
-              <Button type="submit">{createProblem.isPending ? "Saving..." : "Save changes"}</Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+      {selectFieldParameters.map(params => (
+        <div key={params.name} className="my-2">
+          <FormField
+            name={params.name}
+            render={({ field }) => (
+              <FormItem>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={params.placeholder} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {params.options.map(value => (
+                      <SelectItem key={value} value={value}>{value.toUpperCase()}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </div>
+      ))}
+      
+      <DialogFooter>
+        <Button type="submit">{createProblem.isPending ? "Saving..." : "Save changes"}</Button>
+      </DialogFooter>
+    </form>
+  </Form>
+  )
+}
+
+export const EditProblemForm = ({ id } : { id: string }) => {
+  const problemData = api.problem.getProblemById.useQuery({ id });
+
+  // if (!problemData.isError) {
+  //   throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to fetch problem data"});
+  // }
+
+  const router = useRouter();
+  const utils = api.useUtils();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      url: "",
+      status: Status.TODO,
+      difficulty: Difficulty.EASY,
+      tags: "graph"
+    }
+  })
+
+//   useEffect(() => {
+//     form.reset({
+//       title: problemData.data?.title,
+//       url: problemData.data?.url,
+//       status: problemData.data?.status,
+//       difficulty: problemData.data?.difficulty,
+//       tags: ""
+//     });
+// }, [problemData.data]);
+
+  const updateProblemById = api.problem.updateProblemById.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      utils.problem.getProblemById.invalidate()
+    }
+  })
+
+
+  const updateProblem = () => {
+    console.log(form.getValues(), "...form values...")
+    // updateProblemById.mutate({ });
+  }
+
+  if (problemData.isPending) {
+    return <div className="font-bold text-lg">Loading...</div>
+  }
+
+  console.log(problemData.data)
+
+
+  return (
+    <Form {...form}>
+    <form onSubmit={form.handleSubmit(updateProblem)} >
+      {inputFieldParameters.map(param => (
+        <div key={param.name}  className="h-[100px] mb-4">
+        <FormField
+          control={form.control}
+          name={param.name}
+          
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{param.formLabel}</FormLabel>
+              <FormControl>
+                <Input placeholder={param.placeholder} {...field} />
+              </FormControl>
+              <FormMessage className="text-[14px]" />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      ))}
+
+      {selectFieldParameters.map(params => (
+        <div key={params.name} className="my-2">
+          <FormField
+            name={params.name}
+            render={({ field }) => (
+              <FormItem>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={params.placeholder} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {params.options.map(value => (
+                      <SelectItem key={value} value={value}>{value.toUpperCase()}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </div>
+      ))}
+      
+      <DialogFooter>
+        <Button type="submit">{problemData.isPending ? "Saving..." : "Save changes"}</Button>
+      </DialogFooter>
+    </form>
+  </Form>
   )
 }
