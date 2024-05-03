@@ -50,6 +50,12 @@ export function ColumnFieldSelection({
         >
           Difficulty
         </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
+          checked={columnFilterSelection === "attempts"}
+          onCheckedChange={() => setColumnFilterSelection("attempts")}
+        >
+          Attempts
+        </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
