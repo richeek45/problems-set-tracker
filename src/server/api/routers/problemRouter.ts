@@ -22,6 +22,21 @@ const formSchema = z.object({
 
 })
 
+const updateFormSchema = z.object({
+  id: z.string(),
+  title: z.string().min(5, {
+    message: "Title must be 5 characters long"
+  }),
+  url: z.string().url({
+    message: "Not a valid url"
+  }).min(5, {
+    message: "Url must be 10 characters long"
+  }),
+  status: z.enum([Status.TODO, Status.INPROGRESS, Status.COMPLETED, Status.REPEAT]),
+  difficulty: z.enum([Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD]),
+  tags: z.array(z.string()),
+})
+
 export const problemRouter = createTRPCRouter({
 
   getProblemById: publicProcedure
@@ -29,6 +44,13 @@ export const problemRouter = createTRPCRouter({
   .query(async ({ ctx, input }) => {
     const { id } = input;
     return await ctx.db.problem.findFirst({ where: { id } })
+  }),
+
+  resetProgressById: protectedProcedure
+  .input(z.object({ id: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    const { id } = input;
+    return await ctx.db.problem.update({ where: { id }, data: { attempts: 0, status: Status.TODO }})
   }),
 
   getAllProblems: publicProcedure.query(async ({ ctx }) => {
@@ -50,13 +72,13 @@ export const problemRouter = createTRPCRouter({
   }),
 
   updateProblemById: protectedProcedure
-  .input(formSchema.extend({ id: z.string() }))
+  .input(updateFormSchema)
   .mutation(async ({ ctx, input }) => {
-    const { id, title, url, difficulty, status, tags, favourites, attempts } = input;
+    const { id, title, url, difficulty, status, tags } = input;
     const problem = await ctx.db.problem.update({
       where: { id },
       data: {
-        title, url, favourites, status, tags, attempts, difficulty
+        title, url, status, tags, difficulty
       }});
     console.log(problem);
     return problem;
