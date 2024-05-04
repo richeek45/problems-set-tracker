@@ -198,8 +198,7 @@ const NewProblemForm = () => {
         <div key={param.name}  className="h-[100px] mb-4">
         <FormField
           control={form.control}
-          name={param.name}
-          
+          name={param.name as keyof Schema}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{param.formLabel}</FormLabel>
@@ -305,8 +304,7 @@ export const EditProblemForm = ({ id, setIsDialogOpen } : { id: string, setIsDia
         <div key={param.name}  className="h-[100px] mb-4">
         <FormField
           control={form.control}
-          name={param.name}
-          
+          name={param.name as keyof Schema}          
           render={({ field }) => (
             <FormItem>
               <FormLabel>{param.formLabel}</FormLabel>
