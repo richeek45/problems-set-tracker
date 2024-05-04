@@ -114,30 +114,17 @@ const formSchema = z.object({
 export default function CreateListItem({ 
   type, 
   id, 
-  isDialogOpen,
-  setIsDialogOpen,
-  handleDropdownChange 
 } : { 
   type: string, 
   id?: string, 
-  isDialogOpen: boolean,
-  setIsDialogOpen: (value: boolean) => void,
-  handleDropdownChange?: (value: boolean, source: string) => void
 }) {
-
-
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const dialogTitle = type === "edit" ? "Edit the Problem" : "Add New Problem";
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={(value) => {
-      setIsDialogOpen(value);
-      console.log("dialog is ", value);
-      if (handleDropdownChange) {
-        handleDropdownChange(value, "dialog");
-      }
-    }}>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        {type === "edit" ? <Button size="sm" variant="ghost">edit</Button> :  <Button size="sm" >Add New Problem</Button>}
+        {type === "edit" ? <Button size="sm" variant="ghost">Edit</Button> :  <Button size="sm" >Add New Problem</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] h-[75%]">
         <DialogHeader>
@@ -146,7 +133,7 @@ export default function CreateListItem({
             Fill the values for your problem. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
-          {type === "edit" && id ? <EditProblemForm id={id} /> : <NewProblemForm /> }
+          {type === "edit" && id ? <EditProblemForm id={id} setIsDialogOpen={setIsDialogOpen} /> : <NewProblemForm /> }
       </DialogContent>
     </Dialog>
   )
@@ -260,7 +247,7 @@ const NewProblemForm = () => {
   )
 }
 
-export const EditProblemForm = ({ id } : { id: string }) => {
+export const EditProblemForm = ({ id, setIsDialogOpen } : { id: string, setIsDialogOpen: (value: boolean) => void }) => {
   const problemData = api.problem.getProblemById.useQuery({ id });
 
   // if (!problemData.isError) {
@@ -277,39 +264,39 @@ export const EditProblemForm = ({ id } : { id: string }) => {
       url: "",
       status: Status.TODO,
       difficulty: Difficulty.EASY,
-      tags: "graph"
+      tags: ""
     }
   })
 
-//   useEffect(() => {
-//     form.reset({
-//       title: problemData.data?.title,
-//       url: problemData.data?.url,
-//       status: problemData.data?.status,
-//       difficulty: problemData.data?.difficulty,
-//       tags: ""
-//     });
-// }, [problemData.data]);
+  useEffect(() => {
+    form.reset({
+      title: problemData.data?.title,
+      url: problemData.data?.url,
+      status: problemData.data?.status,
+      difficulty: problemData.data?.difficulty,
+      tags: problemData.data?.tags.toString()
+    });
+}, [problemData.data]);
 
   const updateProblemById = api.problem.updateProblemById.useMutation({
     onSuccess: () => {
       router.refresh();
-      utils.problem.getProblemById.invalidate()
+      utils.problem.getAllProblems.invalidate();
+      // reset form state here
+      form.reset();
+      setIsDialogOpen(false);
     }
   })
 
 
   const updateProblem = () => {
-    console.log(form.getValues(), "...form values...")
-    // updateProblemById.mutate({ });
+    const formFieldValues = form.getValues();
+    updateProblemById.mutate({ ...formFieldValues, id, tags: formFieldValues.tags.split(' ') });
   }
 
   if (problemData.isPending) {
     return <div className="font-bold text-lg">Loading...</div>
   }
-
-  console.log(problemData.data)
-
 
   return (
     <Form {...form}>
@@ -340,7 +327,15 @@ export const EditProblemForm = ({ id } : { id: string }) => {
             name={params.name}
             render={({ field }) => (
               <FormItem>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select 
+                  onValueChange={(value) => {
+                    if (value.length) {
+                      field.onChange(value)
+                    }
+                  }} 
+                  defaultValue={field.value} 
+                  value={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder={params.placeholder} />
@@ -360,7 +355,7 @@ export const EditProblemForm = ({ id } : { id: string }) => {
       ))}
       
       <DialogFooter>
-        <Button type="submit">{problemData.isPending ? "Saving..." : "Save changes"}</Button>
+        <Button type="submit">{updateProblemById.isPending ? "Saving..." : "Save changes"}</Button>
       </DialogFooter>
     </form>
   </Form>
