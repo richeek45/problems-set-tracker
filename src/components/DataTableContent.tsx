@@ -118,7 +118,7 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between px-10 py-2">
-        <InputFile />
+        {/* <InputFile /> */}
         <CreateListItem type="add" />
       </div>
 
