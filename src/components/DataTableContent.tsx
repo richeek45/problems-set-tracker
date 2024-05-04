@@ -27,6 +27,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip"
 import { Input } from "~/components/ui/input"
 import {
   Table,
@@ -44,6 +50,7 @@ import { Difficulty, Status } from "@prisma/client"
 import { useRouter } from "next/navigation"
 import { ColumnFieldSelection } from "./columnFieldSelection"
 import ProblemSettingDropdown from "./ProblemSettingDropdown"
+import MultiColumnDropdown from "./ui/multiSelectDropdown"
 
 type SortMap = {
   [key in Difficulty]: number
@@ -78,7 +85,6 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
   });
   const [rowSelection, setRowSelection] = useState({});
   const [columnFilterSelection, setColumnFilterSelection] = useState("url");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const table = useReactTable({
     data, 
@@ -113,7 +119,7 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
     <div className="w-full">
       <div className="flex items-center justify-between px-10 py-2">
         <InputFile />
-        <CreateListItem type="add" isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} />
+        <CreateListItem type="add" />
       </div>
 
       <div className="flex items-center py-4 px-2 gap-4">
@@ -163,7 +169,7 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="px-0">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -184,7 +190,7 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
                   data-state={row.getIsSelected() && "selected"}  
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="p-2">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -285,15 +291,26 @@ export default function ListContent() {
       */
         const url = row.getValue("url") as Url;
         return (
-          <Button variant="link">
-            <Link 
-              href={url.link ?? ""}
-              target="_blank"
-              rel="noopener noreferrer" 
-              className="text-right font-medium hover:underline hover:text-sky-500">
-              {url.problem_number}. {url.title}
-            </Link>
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {/* <p className="truncate w-36 text-nowrap">A very long titlte is written to extend the column size </p> */}
+                <div className="w-40 truncate">
+                  <Link 
+                    href={url.link ?? ""}
+                    target="_blank"
+                    rel="noopener noreferrer" 
+                    className="text-right font-medium hover:underline hover:text-sky-500">
+                    {url.problem_number}. {url.title}
+                  </Link>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{url.title}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
         )
       },
       filterFn: (row, columnId, filterValue) => {
@@ -324,6 +341,8 @@ export default function ListContent() {
         return (
           <Button 
             variant="ghost"
+            size="sm"
+            className="w-26 p-0"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             >
               Difficulty
@@ -332,7 +351,7 @@ export default function ListContent() {
         )
       },
       cell: ({ row }) => {
-        return (<div>{row.getValue("difficulty")}</div>) 
+        return (<div className="w-16">{row.getValue("difficulty")}</div>) 
       }
     },
     {
@@ -341,6 +360,7 @@ export default function ListContent() {
         return (
           <Button 
             variant="ghost"
+            className="w-22 p-0"
             onClick={() => column.toggleSorting()}
             >
               Favourite
@@ -366,6 +386,7 @@ export default function ListContent() {
       header: ({ column }) => (
         <Button 
           variant="ghost"
+          className="w-24 p-0"
           onClick={() => column.toggleSorting()}>
             Attempts
             <ArrowUpDown />
@@ -378,6 +399,11 @@ export default function ListContent() {
     {
       id: "action",
       enableHiding: false,
+      header: ({ column}) => {
+        return (
+          <MultiColumnDropdown />
+        )
+      },
       cell: ({ row }) => {
         const rowValues = row.original;
         return (
