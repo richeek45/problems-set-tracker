@@ -3,7 +3,7 @@
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 
-// import { read, utils } from "xlsx";
+import { read, utils } from "xlsx";
 import { ChangeEvent } from "react";
 
 interface FileInputEvent extends Event {
@@ -27,54 +27,54 @@ interface RowType extends ColType {
 export function InputFile() {
 
   const fileReader = async (e: React.ChangeEvent extends FileInputEvent ? FileInputEvent: ChangeEvent<HTMLInputElement>) => {
-    // try{
-    //   const workbook = read(await e.target.files![0].arrayBuffer(), { });
-    //   console.log(workbook)
+    try{
+      const workbook = read(await e.target.files![0].arrayBuffer(), { });
+      console.log(workbook)
 
-    //   const rows: RowType[] = [];
+      const rows: RowType[] = [];
 
-    //   workbook.SheetNames.forEach(sheetName => {
-    //     const worksheet = workbook.Sheets[sheetName];
-    //     const ref = utils.decode_range(worksheet["!ref"]!);
+      workbook.SheetNames.forEach(sheetName => {
+        const worksheet = workbook.Sheets[sheetName];
+        const ref = utils.decode_range(worksheet["!ref"]!);
 
-    //     console.log(worksheet, ref);
+        console.log(worksheet, ref);
 
-    //     // For future enhancement - add upper and lower limits for rows ex. - [15, 350]
+        // For future enhancement - add upper and lower limits for rows ex. - [15, 350]
 
-    //     for (let row = 5; row < ref.e.r; row++) {
-    //       const cols: ColType = {} as ColType;
-    //       for (let col = 0; col < ref.e.c; col++) {
+        for (let row = 5; row < ref.e.r; row++) {
+          const cols: ColType = {} as ColType;
+          for (let col = 0; col < ref.e.c; col++) {
 
-    //         const address = utils.encode_cell({ r: row, c: col });
-    //         const cell = worksheet[address];
+            const address = utils.encode_cell({ r: row, c: col });
+            const cell = worksheet[address];
 
-    //         if (!cell) continue;
+            if (!cell) continue;
 
-    //         if (!cell.l) {
-    //           if (address.includes('A')) {
-    //             cols.tag = cell.v;
-    //           }
-    //           continue;
-    //         }
+            if (!cell.l) {
+              if (address.includes('A')) {
+                cols.tag = cell.v;
+              }
+              continue;
+            }
 
-    //         const link = worksheet[address].l;
+            const link = worksheet[address].l;
 
-    //         cols.title = cell.v;
-    //         cols.address = address;
-    //         cols.link = link.Target;
-    //       }
+            cols.title = cell.v;
+            cols.address = address;
+            cols.link = link.Target;
+          }
 
-    //       rows.push({worksheet: sheetName, problem_number: row - 5,  ...cols });
-    //     }
-    //   })
+          rows.push({worksheet: sheetName, problem_number: row - 5,  ...cols });
+        }
+      })
 
-    //   console.log(rows);
+      console.log(rows);
 
-    //   /// run the query command for saving to the database ......
+      /// run the query command for saving to the database ......
 
-    // } catch(error){
-    //   console.log(error);
-    // }
+    } catch(error){
+      console.log(error);
+    }
   } 
 
   return (
