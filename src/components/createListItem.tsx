@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import { SelectTopics } from "./selectFields";
+// import { SelectTopics } from "./selectField";
 import { Button } from "./ui/button"
 import {
   Dialog,
