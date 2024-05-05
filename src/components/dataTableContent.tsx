@@ -42,7 +42,6 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table"
-// import { InputFile } from "./inputFiles"
 import Link from "next/link"
 import { api } from "~/trpc/react"
 import { Difficulty, Status } from "@prisma/client"
@@ -51,6 +50,7 @@ import { ColumnFieldSelection } from "./columnFieldSelection"
 import CreateListItem from "./createListItem"
 import ProblemSettingDropdown from "./ProblemSettingDropdown"
 import MultiColumnDropdown from "./ui/multiSelectDropdown"
+import { InputFile } from "./inputFiles"
 
 type SortMap = {
   [key in Difficulty]: number
@@ -118,7 +118,7 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between px-10 py-2">
-        {/* <InputFile /> */}
+        <InputFile />
         <CreateListItem type="add" />
       </div>
 
@@ -127,7 +127,6 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
           placeholder="Filter questions...."
           value={table.getColumn(columnFilterSelection)?.getFilterValue() as string ?? ""}
           onChange={(event) => {
-            console.log(event.target.value)
             table.getColumn(columnFilterSelection)?.setFilterValue(event.target.value)
           }}
           className="max-w-sm"
