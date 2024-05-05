@@ -43,6 +43,9 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz",
     "zod": "^3.23.4"
   },
+  "overrides": {
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz"
+  },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
