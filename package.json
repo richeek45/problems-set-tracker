@@ -37,7 +37,6 @@
     "react-hook-form": "^7.51.3",
     "react-hot-toast": "^2.4.1",
     "superjson": "^2.2.1",
-    "table": "github:tanstack/react-table",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz",
