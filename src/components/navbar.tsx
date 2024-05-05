@@ -1,8 +1,8 @@
 import Link from "next/link"
-// import { auth } from "~/server/auth"
+import { auth } from "~/server/auth";
 
 export const Navbar = async () => {
-  // const session = await auth();
+  const session = await auth();
 
   return (
     <header className="flex h-16 w-full shrink-0 items-center px-4 md:px-6">
@@ -11,12 +11,12 @@ export const Navbar = async () => {
         <span className="sr-only">Acme Inc</span>
       </Link>
       <nav className="flex justify-end space-x-6 text-sm font-medium md:space-x-10">
-        {/* <Link
+        <Link
           className="text-gray-500 transition-colors hover:text-gray-900 focus:text-gray-900 focus:outline-none disabled:pointer-events-none"
           href={session ? "/api/auth/signout" : "/api/auth/signin"}
         >
           {session ? "Sign Out" : "Sign In"}
-        </Link> */}
+        </Link>
       </nav>
     </header>
   )

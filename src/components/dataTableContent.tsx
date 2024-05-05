@@ -42,15 +42,15 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table"
-// import CreateListItem from "./createListItem"
 // import { InputFile } from "./inputFiles"
 import Link from "next/link"
 import { api } from "~/trpc/react"
 import { Difficulty, Status } from "@prisma/client"
 import { useRouter } from "next/navigation"
-// import { ColumnFieldSelection } from "./columnFieldSelection"
-// import ProblemSettingDropdown from "./ProblemSettingDropdown"
-// import MultiColumnDropdown from "./ui/multiSelectDropdown"
+import { ColumnFieldSelection } from "./columnFieldSelection"
+import CreateListItem from "./createListItem"
+import ProblemSettingDropdown from "./ProblemSettingDropdown"
+import MultiColumnDropdown from "./ui/multiSelectDropdown"
 
 type SortMap = {
   [key in Difficulty]: number
@@ -118,8 +118,8 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between px-10 py-2">
-        {/* <InputFile />
-        <CreateListItem type="add" /> */}
+        {/* <InputFile /> */}
+        <CreateListItem type="add" />
       </div>
 
       <div className="flex items-center py-4 px-2 gap-4">
@@ -132,7 +132,7 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
           }}
           className="max-w-sm"
         />
-        {/* <ColumnFieldSelection columnFilterSelection={columnFilterSelection} setColumnFilterSelection={setColumnFilterSelection} /> */}
+        <ColumnFieldSelection columnFilterSelection={columnFilterSelection} setColumnFilterSelection={setColumnFilterSelection} />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -400,21 +400,14 @@ export default function ListContent() {
       id: "action",
       enableHiding: false,
       header: ({ column}) => {
-        // return (
-        //   <MultiColumnDropdown />
-        // )
         return (
-          <div />
+          <MultiColumnDropdown />
         )
-        
       },
       cell: ({ row }) => {
         const rowValues = row.original;
-        // return (
-        // <ProblemSettingDropdown rowValues={rowValues} />
-        // )
         return (
-          <div />
+          <ProblemSettingDropdown rowValues={rowValues} />
         )
       }
     }
