@@ -71,6 +71,22 @@ export const problemRouter = createTRPCRouter({
     return problem;
   }),
 
+  createManyProblem: protectedProcedure
+  .input(z.array(formSchema))
+  .mutation(async ({ ctx, input }) => {
+    const problems = await ctx.db.problem.createMany({
+      data: input
+    })
+    console.log(problems);
+    return problems;
+  }),
+
+  deleteAllProblems: protectedProcedure
+  .mutation(async ({ ctx }) => {
+    const deletedProblems = await ctx.db.problem.deleteMany({});
+    return deletedProblems;
+  }),
+
   updateProblemById: protectedProcedure
   .input(updateFormSchema)
   .mutation(async ({ ctx, input }) => {
