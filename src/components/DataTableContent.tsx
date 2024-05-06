@@ -81,7 +81,7 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 4
+    pageSize: 10
   });
   const [rowSelection, setRowSelection] = useState({});
   const [columnFilterSelection, setColumnFilterSelection] = useState("url");
