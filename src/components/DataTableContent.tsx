@@ -51,6 +51,7 @@ import { useRouter } from "next/navigation"
 import { ColumnFieldSelection } from "./columnFieldSelection"
 import ProblemSettingDropdown from "./ProblemSettingDropdown"
 import MultiColumnDropdown from "./ui/multiSelectDropdown"
+import { filterTitle } from "~/utils/dataTable"
 
 type SortMap = {
   [key in Difficulty]: number
@@ -313,10 +314,7 @@ export default function ListContent() {
           
         )
       },
-      filterFn: (row, columnId, filterValue) => {
-        const title = row.original.url.title.toLowerCase();
-        return title.includes(filterValue.toLowerCase());
-      }
+      filterFn: (row, columnId, filterValue) => filterTitle(row, columnId, filterValue),
     },
     {
       accessorKey: "tags",
