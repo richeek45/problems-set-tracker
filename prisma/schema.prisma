@@ -38,6 +38,8 @@ model Problem {
   difficulty     Difficulty    @default(EASY)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime?     @default(now())
+  createdById    String        
+  createdBy      User          @relation(fields: [createdById], references: [id])
 }
 
 
@@ -48,6 +50,7 @@ model User {
   email         String          @unique
   emailVerified DateTime?
   image         String?
+  problems      Problem[]
   accounts      Account[]
   sessions      Session[]
   // Optional for WebAuthn support
