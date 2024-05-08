@@ -1,4 +1,4 @@
-import ListContent from "./DataTableContent";
+import ListContent from "./ListContent";
 import Sidebar from "./sidebar";
 
 export default function MainContent() {

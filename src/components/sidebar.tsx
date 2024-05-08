@@ -1,9 +1,10 @@
 import Link from "next/link"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
+import { Button } from "./ui/button"
 
 export default function Sidebar() {
   return (
-    <div className="hidden md:flex flex-col w-[240px] border-r border-gray-200 dark:border-gray-800">
+    <div className="hidden md:flex flex-col w-[300px] border-r border-gray-200 dark:border-gray-800">
     <div className="flex-1 overflow-y-auto">
       <nav className="flex-1 px-2 space-y-1">
         <Accordion collapsible type="single">
@@ -29,26 +30,13 @@ export default function Sidebar() {
                 className="flex items-center h-10 px-3 text-sm font-semibold text-gray-900 border-l-2 border-transparent dark:text-gray-100"
                 href="#"
               >
-                Orders
+                TODO
               </Link>
               <Link
                 className="flex items-center h-10 px-3 text-sm font-semibold text-gray-900 border-l-2 border-transparent dark:text-gray-100"
                 href="#"
               >
-                New Order
-              </Link>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="products">
-            <AccordionTrigger className="flex items-center h-10 px-3 text-sm font-semibold text-gray-900 border-l-2 border-transparent dark:text-gray-100">
-              Favourites
-            </AccordionTrigger>
-            <AccordionContent>
-              <Link
-                className="flex items-center h-10 px-3 text-sm font-semibold text-gray-900 border-l-2 border-transparent dark:text-gray-100"
-                href="#"
-              >
-                Products
+                TODO
               </Link>
             </AccordionContent>
           </AccordionItem>
@@ -57,12 +45,7 @@ export default function Sidebar() {
               Problem Set
             </AccordionTrigger>
             <AccordionContent>
-              <Link
-                className="flex items-center h-10 px-3 text-sm font-semibold text-gray-900 border-l-2 border-transparent dark:text-gray-100"
-                href="#"
-              >
-                Products
-              </Link>
+              <Button size="sm" variant="outline">Create New Collection</Button>
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="customers" />
