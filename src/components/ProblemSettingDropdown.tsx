@@ -9,21 +9,31 @@ import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import CreateListItem from "./createListItem";
 import { Status } from "@prisma/client";
+import { useToast } from "./ui/use-toast";
 
 const ProblemSettingDropdown = ({ rowValues } : { rowValues: ProblemRow }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const router = useRouter();
   const utils = api.useUtils();
+  const { toast } = useToast();
 
   const markComplete = api.problem.markCompleted.useMutation({  
     onSuccess: () => {
     router.refresh();
     utils.problem.getAllProblems.invalidate();
+    toast({
+      title: "MARK COMPLETED",
+      description: "Successfully marked the problem as complete!",
+    })
     },
     onError: (error) => {
       const errorMessage = error.data?.zodError?.fieldErrors.content![0];
       console.log(error, "Error.........");    
+      toast({
+        title: "ERROR SAVING",
+        description: "Error updating the problem!",
+      })
     }
   })
 
@@ -31,12 +41,44 @@ const ProblemSettingDropdown = ({ rowValues } : { rowValues: ProblemRow }) => {
     onSuccess: () => {
       router.refresh();
       utils.problem.getAllProblems.invalidate();
+      toast({
+        title: "RESET PROGRESS",
+        description: "Successfully marked the problem as complete!",
+      })
     },
     onError: (error) => {
       const errorMessage = error.data?.zodError?.fieldErrors.content![0];
-      console.log(error, "Error.........");  
+      console.log(error, "Error.........");
+      toast({
+        title: "ERROR SAVING",
+        description: "Error resetting the problem!",
+      })  
     }
   })
+
+  const deleteProblemById = api.problem.deleteProblemById.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      utils.problem.getAllProblems.invalidate();
+      toast({
+        title: "DELETED",
+        description: "Successfully marked the problem as complete!",
+      })
+    },
+    onError: (error) => {
+      const errorMessage = error.data?.zodError?.fieldErrors.content![0];
+      console.log(error, "Error.........");
+      toast({
+        title: "ERROR SAVING",
+        description: "Error deleting the problem!",
+      })  
+    }
+  })
+
+  const handleDeleteProblem = () => {
+    // test delete 
+    // deleteProblemById.mutate({ problemId: rowValues.id })
+  }
 
   const resetProgress = () => {
     resetProgressById.mutate({ id: rowValues.id });
@@ -71,13 +113,13 @@ const ProblemSettingDropdown = ({ rowValues } : { rowValues: ProblemRow }) => {
               Mark as Completed
             </DropdownMenuItem>
             <DropdownMenuItem>
-              Start the timer <span><Clock/></span>
+              Start the timer &nbsp;<span><Clock/></span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => resetProgress()}>
               Reset Progress
             </DropdownMenuItem>
 
-            <DropdownMenuGroup>
+            <DropdownMenuGroup >
               <DropdownMenuSub>
 
               <DropdownMenuSubTrigger>
@@ -126,10 +168,10 @@ const ProblemSettingDropdown = ({ rowValues } : { rowValues: ProblemRow }) => {
             </DropdownMenuGroup>
 
 
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleDeleteProblem}>
               Delete
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem disabled>
               Remove
             </DropdownMenuItem>
           </DropdownMenuGroup>
