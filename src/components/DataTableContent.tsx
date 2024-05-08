@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
+  Row,
   SortingState,
   VisibilityState,
   flexRender,
@@ -76,7 +77,7 @@ export interface ProblemRow {
 }
 
 
-export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: any[]}) => {
+export const DataTableSet = ({ data } : { data: ProblemRow[]}) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -87,180 +88,20 @@ export const DataTableSet = ({ data, columns } : { data: ProblemRow[], columns: 
   const [rowSelection, setRowSelection] = useState({});
   const [columnFilterSelection, setColumnFilterSelection] = useState("url");
 
-  const table = useReactTable({
-    data, 
-    columns, 
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
-    rowCount: data.length,
-    defaultColumn: {
-      size: 200, //starting column size
-      minSize: 50, //enforced during column resizing
-      maxSize: 250, //enforced during column resizing
-    },
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-      pagination
-    }
-  })
-
-  const tableRows = table.getRowModel().rows;
-
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-between px-10 py-2">
-        <InputFile />
-        <CreateListItem type="add" />
-      </div>
-
-      <div className="flex items-center py-4 px-2 gap-4">
-        <Input 
-          placeholder="Filter questions...."
-          value={table.getColumn(columnFilterSelection)?.getFilterValue() as string ?? ""}
-          onChange={(event) => {
-            console.log(event.target.value)
-            table.getColumn(columnFilterSelection)?.setFilterValue(event.target.value)
-          }}
-          className="max-w-sm"
-        />
-        <ColumnFieldSelection columnFilterSelection={columnFilterSelection} setColumnFilterSelection={setColumnFilterSelection} />
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" >
-            {table
-            .getAllColumns()
-            .filter((column) => column.getCanHide())
-            .map((column) => {
-
-              return (
-                <DropdownMenuCheckboxItem 
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              )
-            })
-            }
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="px-0">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-
-          <TableBody>
-            {tableRows?.length ? 
-              tableRows.map(row => (
-                <TableRow 
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}  
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="p-2">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-              </TableRow>
-              ))
-            : <TableRow>
-                <TableCell colSpan={columns.length} className="text-center h-24">No Results</TableCell>
-            </TableRow>
-          }
-          </TableBody>
-        </Table>
-      </div>
-
-
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
-        </div>
-    </div>
-  )
-
-}
-
-export default function ListContent() {
-  const router = useRouter();
-  const utils = api.useUtils();
-
-  const toggleFavourite = api.problem.toggleProblemFavourite.useMutation({
-    onSuccess: () => {
-      router.refresh();
-      utils.problem.getAllProblems.invalidate();
-    },
-    onError: (error) => {
-      const errorMessage = error.data?.zodError?.fieldErrors.content![0];
-      console.log(error, "Error.........");    
-    }
-  });
-
   const columns: ColumnDef<ProblemRow>[] = useMemo(() => [
     {
       id: "select",
       header: ({ table }) => (
         <Checkbox 
           checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          onCheckedChange={(value) => {
+            // select page rows by default
+            table.toggleAllPageRowsSelected(!!value);
+            // if all rows are selected deselect all rows
+            if (table.getIsAllRowsSelected()) {
+              table.toggleAllRowsSelected(!!value);
+            }
+          }}
           aria-label="Select all"
         />
       ),
@@ -366,13 +207,7 @@ export default function ListContent() {
             </Button>
         )
       },
-      cell: ({ row }) => <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => {
-          toggleFavourite.mutate({ favourite: row.getValue("favourites"), id: row.original.id })
-        }}
-      >{row.getValue("favourites") ? <Star fill="#FBB03B" stroke="#FBB03B" /> : <Star stroke="#FBB03B" />}</Button>
+      cell: ({ row }) => <ToggleFavourite row={row} />
     },
     {
       accessorKey: "attempts",
@@ -397,9 +232,9 @@ export default function ListContent() {
     {
       id: "action",
       enableHiding: false,
-      header: ({ column}) => {
+      header: ({ column, table}) => {
         return (
-          <MultiColumnDropdown />
+          <MultiColumnDropdown table={table} />
         )
       },
       cell: ({ row }) => {
@@ -411,26 +246,182 @@ export default function ListContent() {
     }
   ],[])
 
-  const { data } = api.problem.getAllProblems.useQuery();
 
-  if (!data) return;
-
-  const allProblems = data.map((problem) => ({
-    id: problem.id,
-    status: problem.status,
-    tags: problem.tags,
-    attempts: problem.attempts,
-    difficulty: problem.difficulty,
-    favourites: problem.favourites,
-    createdAt: problem.createdAt,
-    updatedAt: problem.updatedAt,
-    url: {
-      problem_number: problem.problem_number,
-      title: problem.title,
-      link: problem.url
+  const table = useReactTable({
+    data, 
+    columns, 
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
+    rowCount: data.length,
+    defaultColumn: {
+      size: 200, //starting column size
+      minSize: 50, //enforced during column resizing
+      maxSize: 250, //enforced during column resizing
+    },
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+      pagination
     }
-  }));
-  
+  })
 
-  return (<DataTableSet data={allProblems} columns={columns} />)
+  const tableRows = table.getRowModel().rows;
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-between px-10 py-2">
+        <InputFile />
+        <CreateListItem type="add" />
+      </div>
+
+      <div className="flex items-center py-4 px-2 gap-4">
+        <Input 
+          placeholder="Filter questions...."
+          value={table.getColumn(columnFilterSelection)?.getFilterValue() as string ?? ""}
+          onChange={(event) => {
+            console.log(event.target.value)
+            table.getColumn(columnFilterSelection)?.setFilterValue(event.target.value)
+          }}
+          className="max-w-sm"
+        />
+        <ColumnFieldSelection columnFilterSelection={columnFilterSelection} setColumnFilterSelection={setColumnFilterSelection} />
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="ml-auto">
+              Columns <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" >
+            {table
+            .getAllColumns()
+            .filter((column) => column.getCanHide())
+            .map((column) => {
+
+              return (
+                <DropdownMenuCheckboxItem 
+                  key={column.id}
+                  className="capitalize"
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                >
+                  {column.id}
+                </DropdownMenuCheckboxItem>
+              )
+            })
+            }
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className="px-2">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+
+          <TableBody>
+            {tableRows?.length ? 
+              tableRows.map(row => (
+                <TableRow 
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}  
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="p-2">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+              </TableRow>
+              ))
+            : <TableRow>
+                <TableCell colSpan={columns.length} className="text-center h-24">No Results</TableCell>
+            </TableRow>
+          }
+          </TableBody>
+        </Table>
+      </div>
+
+
+      <div className="flex items-center justify-end space-x-2 py-4">
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
+
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
+        </div>
+    </div>
+  )
+
+}
+
+const ToggleFavourite = ({ row } : { row:  Row<ProblemRow>} ) => {
+  const router = useRouter();
+  const utils = api.useUtils();
+
+  const toggleFavourite = api.problem.toggleProblemFavourite.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      utils.problem.getAllProblems.invalidate();
+    },
+    onError: (error) => {
+      const errorMessage = error.data?.zodError?.fieldErrors.content![0];
+      console.log(error, "Error.........");    
+    }
+  });
+
+  return (<Button
+    variant="ghost"
+    size="sm"
+    onClick={() => {
+      toggleFavourite.mutate({ id: row.original.id })
+    }}
+  >{row.getValue("favourites") ? <Star fill="#FBB03B" stroke="#FBB03B" /> : <Star stroke="#FBB03B" />}</Button>)
+
+
+
 }
