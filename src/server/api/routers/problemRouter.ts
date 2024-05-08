@@ -1,6 +1,7 @@
 import { z } from "zod"; 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { Difficulty, Status } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 
 const formSchema = z.object({
@@ -43,30 +44,119 @@ export const problemRouter = createTRPCRouter({
   .input(z.object({ id: z.string()}))
   .query(async ({ ctx, input }) => {
     const { id } = input;
-    return await ctx.db.problem.findFirst({ where: { id } })
+    const problemById = await ctx.db.problem.findFirst({
+      where: { id },
+      // TODO - something is wrong here 
+      include: {
+        _count: true,
+        status: { 
+          where: { problemId: id },
+          select:{ status: true }
+        }
+      }
+    })
+
+    console.log(problemById, "....ProblemById...")
+    return problemById;
   }),
 
   resetProgressById: protectedProcedure
   .input(z.object({ id: z.string() }))
   .mutation(async ({ ctx, input }) => {
     const { id } = input;
-    return await ctx.db.problem.update({ where: { id }, data: { attempts: 0, status: Status.TODO }})
+
+    return await ctx.db.problem.update({ where: { id }, data: { 
+      attempts: {
+        update: {
+          where: {
+            userId_problemId: {
+              problemId: id,
+              userId: ctx.session.user.id,
+            }
+          },
+          data: {
+            attempts: 0,
+            updatedAt: new Date()
+          }
+        }
+      },
+      
+      status: {
+        update: {
+          where: {
+            userId_problemId: {
+              problemId: id,
+              userId: ctx.session.user.id,
+            }
+          },
+          data: {
+            status: Status.TODO,
+            updatedAt: new Date()
+          }
+        }
+      }
+    }})
+  }),
+
+  getAllUserProblems: protectedProcedure.query(async ({ ctx }) => {
+    // skip: Value, take: value
+    // const { skip, take } = input;
+    const userId = ctx.session.user.id;
+
+
+    const problems = await ctx.db.problem.findMany({
+      include: { 
+        favouritedBy: {
+          where: { id: userId }
+        }, 
+        attempts: {
+          where: { userId },
+          select: { attempts: true }
+        },
+        status: {
+          where: { userId },
+          select: { status: true }
+        } 
+      },
+    });
+
+    console.log(problems, "problems user signed in ...")
+    return problems;
   }),
 
   getAllProblems: publicProcedure.query(async ({ ctx }) => {
-    // skip: Value, take: value
-    // const { skip, take } = input;
     const problems = await ctx.db.problem.findMany();
+
+    console.log(problems, "aall problemss...")
     return problems;
   }),
+
   createOneProblem: protectedProcedure
   .input(formSchema)
   .mutation(async ({ ctx, input }) => {
-    const { title, url, difficulty, status, tags, attempts, favourites } = input;
+    const { title, url, difficulty, status, tags, attempts } = input;
+    const userId = ctx.session.user.id;
+
     const problem = await ctx.db.problem.create({
       data: {
-        title, url, favourites, status, tags, attempts, difficulty
-      }});
+        title, 
+        url, 
+        tags, 
+        difficulty,
+        userId, 
+        attempts: {
+          create: [{
+            attempts,
+            userId
+          }]
+        },  
+        status: {
+          create: [{
+            userId,
+            status,
+          }]
+        },
+    }});
     console.log(problem);
     return problem;
   }),
@@ -74,15 +164,94 @@ export const problemRouter = createTRPCRouter({
   createManyProblem: protectedProcedure
   .input(z.array(formSchema))
   .mutation(async ({ ctx, input }) => {
-    const problems = await ctx.db.problem.createMany({
-      data: input
+    const userId = ctx.session.user.id;
+    const problemsData = input;
+
+    const transactions = await ctx.db.$transaction(async (prisma) => {
+
+      try {
+        const existingUrls = await prisma.problem.findMany({
+          where: {
+            OR: problemsData.map((problem) => ({
+              url: problem.url,
+            })),
+          },
+          select: {
+            url: true,
+          },
+        });
+
+        const existingUrlsSet = new Set(existingUrls.map((problem) => problem.url));
+        
+        const uniqueProblemsData = problemsData.filter((problem) => !existingUrlsSet.has(problem.url));
+        
+        console.log(existingUrls)
+
+        // Add the fields in the Problem table
+        const problems = await prisma.problem.createMany({
+          data: uniqueProblemsData.map((problem) => ({
+            title: problem.title,
+            url: problem.url,
+            difficulty: problem.difficulty,
+            tags: problem.tags,
+            userId
+          })),
+        })
+
+        const createdProblems = await prisma.problem.findMany({
+          where: {
+            OR: uniqueProblemsData.map((problem) => ({
+              title: problem.title,
+              url: problem.url
+            })),
+          },
+          select: { id: true }
+        })
+
+        const problemIds = createdProblems.map((problem) => problem.id);
+
+        const createdUserStatusProblems = await prisma.userStatusProblems.createMany({
+          data: problemIds.map((problemId, index) => ({
+            problemId,
+            userId,
+            status: uniqueProblemsData[index].status
+          }))
+        })
+
+        const createdUserAttemptsProblems = await prisma.userAttemptProblems.createMany({
+          data: problemIds.map((problemId, index) => ({
+            problemId,
+            userId,
+            attempts: uniqueProblemsData[index].attempts
+          }))
+        })
+
+        console.log(`${problems} -> ${createdUserStatusProblems} ->  ${createdUserAttemptsProblems} records were created successfully!`);
+        return problems;
+      }
+      catch(error) {
+        return new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to bulk save problem data. Please try again!"})
+      }
     })
-    console.log(problems);
-    return problems;
+  }),
+
+  deleteProblemById: protectedProcedure
+  .input(z.object({ problemId: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    // check if the user is deleting its own problem 
+    const { problemId } = input;
+    const deletedProblem = await ctx.db.problem.delete({
+      where: { id: problemId },
+      
+    }) 
+
+    return deletedProblem;
   }),
 
   deleteAllProblems: protectedProcedure
   .mutation(async ({ ctx }) => {
+
+
     const deletedProblems = await ctx.db.problem.deleteMany({});
     return deletedProblems;
   }),
@@ -91,10 +260,25 @@ export const problemRouter = createTRPCRouter({
   .input(updateFormSchema)
   .mutation(async ({ ctx, input }) => {
     const { id, title, url, difficulty, status, tags } = input;
+    const userId = ctx.session.user.id;
     const problem = await ctx.db.problem.update({
       where: { id },
       data: {
-        title, url, status, tags, difficulty
+        title, url, tags, difficulty,
+        status: {
+          update: {
+            where: {
+              userId_problemId: {
+                userId,
+                problemId: id
+              }
+            },
+            data: {
+              status,
+              updatedAt: new Date()  
+            }
+          }
+        }
       }});
     console.log(problem);
     return problem;
@@ -102,15 +286,55 @@ export const problemRouter = createTRPCRouter({
   }),
 
   toggleProblemFavourite: protectedProcedure
-  .input(z.object({ favourite: z.boolean(), id: z.string() }))
+  .input(z.object({ id: z.string() }))
   .mutation(async ({ ctx, input }) => {
-    const { favourite, id } = input;
-    return await ctx.db.problem.update({
-      data: { favourites: !favourite },
-      where: {
-        id
+    const { id: problemId } = input;
+    const userId = ctx.session.user.id;
+
+    const problem = await ctx.db.problem.findUnique({
+      where: { id: problemId},
+    });
+
+    // If problem does not exist propagate the error to the client side
+    if (!problem) {
+      return new TRPCError({ code: "NOT_FOUND", message: `problem with the id = ${problemId} not found!` })
+    }
+
+    // Find the user by userId along with their favourites
+    const userData = await ctx.db.user.findUnique({
+      where: { id: userId },
+      include: { favourites: true }
+    });
+
+    const isFavourited = userData?.favourites.some((favProblem) => favProblem.id === problemId);
+
+    if (isFavourited) {
+      // if the problem is already favourite, then remove it from the favourites
+      const updatedProblem = await ctx.db.user.update({
+        where: { id: userId },
+        data: {
+          favourites: { 
+            disconnect: { id: problemId }
+          }
+        }
+      })
+
+      console.log('Problem updated successfully:', updatedProblem);
+      return updatedProblem;
+    } 
+
+    // if the problem is not a favourite, add it to the favourite 
+    const updatedProblem = await ctx.db.user.update({
+      where: { id: userId },
+      data: {
+        favourites: {
+          connect: { id: problemId }
+        }
       }
     })
+
+    console.log('Problem updated successfully:', updatedProblem);
+    return updatedProblem;
   }),
 
   markCompleted: protectedProcedure
@@ -120,11 +344,42 @@ export const problemRouter = createTRPCRouter({
     status: z.enum([Status.TODO, Status.INPROGRESS, Status.COMPLETED, Status.REPEAT]) 
   }))
   .mutation(async ({ ctx, input }) => {
-    const { id, attempts, status } = input;
+    const { id: problemId, attempts, status } = input;
+    const userId = ctx.session.user.id;
 
     return ctx.db.problem.update({
-      where: { id },
-      data: { attempts: attempts + 1, status: Status.COMPLETED }
+      where: { id: problemId },
+      data: {
+        attempts: {
+          update: {
+            where: { 
+              userId_problemId: {
+                userId,
+                problemId
+              }
+            },
+            data: {
+              attempts: attempts + 1,
+              updatedAt: new Date()
+            }
+          }
+        },
+
+        status: {
+          update: {
+            where: {
+              userId_problemId: {
+                userId,
+                problemId
+              },
+            },
+            data: {
+              status: Status.COMPLETED,
+              updatedAt: new Date()
+            }
+          }
+        }
+      }
     })
   })
 
