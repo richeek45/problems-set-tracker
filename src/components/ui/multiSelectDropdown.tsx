@@ -2,20 +2,23 @@ import { Clock, MoreHorizontal } from "lucide-react";
 import { Button } from "./button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./dropdown-menu";
 import { useState } from "react";
+import { Table } from "@tanstack/react-table";
+import { Checkbox } from "./checkbox";
+import { ProblemRow } from "../DataTableContent";
 
-const MultiColumnDropdown = () => {
+const MultiColumnDropdown = ({ table } : { table: Table<ProblemRow> }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
     <DropdownMenu open={isDropdownOpen} onOpenChange={(value) => setIsDropdownOpen(value)}>
     <DropdownMenuTrigger asChild>
-      <Button variant="ghost" className="h-8 w-8 p-0">
+      <Button variant="ghost" className="h-8 w-20 ml-6">
         <span className="sr-only">Open menu</span>
         <MoreHorizontal className="h-4 w-4" />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent>
-      <DropdownMenuLabel>Extra Section</DropdownMenuLabel>
+      <DropdownMenuLabel>Mutiple Select Action</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuItem
@@ -23,14 +26,18 @@ const MultiColumnDropdown = () => {
           Mark as Completed
         </DropdownMenuItem>
         <DropdownMenuItem>
-          Start the timer <span><Clock/></span>
+          <Checkbox 
+            checked={table.getIsAllRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+          &nbsp;Select All Problems
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => {
-        }}>
+        <DropdownMenuItem onClick={() => {}}>
           Edit
         </DropdownMenuItem>
         <DropdownMenuItem>
-          Delete
+          Delete Selected
         </DropdownMenuItem>
         <DropdownMenuItem>
           Remove
