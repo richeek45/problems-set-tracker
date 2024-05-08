@@ -161,10 +161,10 @@ export const DataTableSet = ({ data } : { data: ProblemRow[]}) => {
       accessorKey: "tags",
       header: "Tags",
       cell: ({ row }) => <div>{row.getValue("tags")}</div>,
-      filterFn: (row, columnId, filterValue) => {
+      filterFn: (row, columnId: string, filterValue: string) => {
         // tags is an array field - filter based on match of array values...
         const tags = row.original.tags; 
-        return tags.some((tag) =>  (tag.includes(filterValue)));
+        return tags.some((tag) =>  (tag.toLowerCase().includes(filterValue.toLowerCase())));
       }
     },
     {
