@@ -8,10 +8,10 @@ export default async function ListContent() {
   const user = await auth();
 
   if (user) {
-    <AllProblemsWithUserData />
+    return <AllProblemsWithUserData />
   }
 
-  <AllProblemsGlobal />
+  return <AllProblemsGlobal />
 }
 
 const AllProblemsGlobal = async () => {
