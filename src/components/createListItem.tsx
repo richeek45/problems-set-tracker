@@ -14,12 +14,11 @@ import {
 } from "./ui/dialog"
 import { Input } from "./ui/input"
 import { useRouter } from "next/navigation";
-// import toast, { Toaster } from 'react-hot-toast';
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Difficulty, Status } from "@prisma/client"
 import { useForm } from "react-hook-form"
-import { toast } from "~/components/ui/use-toast"
+import { useToast } from "~/components/ui/use-toast"
 import { z } from "zod"
 
 import {
@@ -31,7 +30,7 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { useEffect, useMemo, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import { TRPCError } from "@trpc/server";
 
 interface InputParameters {
@@ -133,15 +132,16 @@ export default function CreateListItem({
             Fill the values for your problem. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
-          {type === "edit" && id ? <EditProblemForm id={id} setIsDialogOpen={setIsDialogOpen} /> : <NewProblemForm /> }
+          {type === "edit" && id ? <EditProblemForm id={id} setIsDialogOpen={setIsDialogOpen} /> : <NewProblemForm setIsDialogOpen={setIsDialogOpen} /> }
       </DialogContent>
     </Dialog>
   )
 }
 
-const NewProblemForm = () => {
+const NewProblemForm = ({ setIsDialogOpen } : { setIsDialogOpen: Dispatch<SetStateAction<boolean>>}) => {
   const router = useRouter();
   const utils = api.useUtils();
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -158,15 +158,26 @@ const NewProblemForm = () => {
     onSuccess: () => {
       router.refresh();
       utils.problem.getAllProblems.invalidate();
+      toast({
+        title: "SAVED SUCCESSFULLY",
+        description: "Problems saved successfully to the database",
+      })
+      setIsDialogOpen(false);
       
     }, 
     onError: (error) => {
       const errorMessage = error.data?.zodError?.fieldErrors.content![0];
       console.log(error, "Error.........");
       if (errorMessage) {
-        // toast.error(errorMessage);
+        toast({
+          title: "ERROR SAVING",
+          description: errorMessage,
+        })
       } else {
-        // toast.error("Failed to post! Please try again later!");
+        toast({
+          title: "ERROR SAVING",
+          description: "Something went wrong while saving. Please try again later!",
+        })
       }
     }
   })
@@ -271,7 +282,7 @@ export const EditProblemForm = ({ id, setIsDialogOpen } : { id: string, setIsDia
     form.reset({
       title: problemData.data?.title,
       url: problemData.data?.url,
-      status: problemData.data?.status,
+      status: problemData.data?.status[0].status,
       difficulty: problemData.data?.difficulty,
       tags: problemData.data?.tags.toString()
     });
