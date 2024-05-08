@@ -27,37 +27,70 @@ enum Status {
 }
 
 model Problem {
-  id             String        @id @default(cuid())
-  problem_number Int          @default(autoincrement())
-  title          String
-  url            String 
+  id             String                   @id @default(cuid())
+  problem_number Int                      @default(autoincrement())
+  title          String                   
+  url            String                   
   tags           String[]
-  favourites     Boolean
-  status         Status
-  attempts       Int           @default(0)
-  difficulty     Difficulty    @default(EASY)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime?     @default(now())
-  createdById    String        
-  createdBy      User          @relation(fields: [createdById], references: [id])
+  favouritedBy   User[]                   @relation("UserFavouriteProblems")
+  status         UserStatusProblems[]
+  attempts       UserAttemptProblems[]
+  difficulty     Difficulty               @default(EASY)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime?                @default(now())
+  userId         String        
+  createdBy      User                     @relation("UserCreatedProblems", fields: [userId], references: [id])
+
+  @@unique([title, url, tags])
 }
 
-
-
 model User {
-  id            String          @id @default(cuid())
-  name          String?
-  email         String          @unique
-  emailVerified DateTime?
-  image         String?
-  problems      Problem[]
-  accounts      Account[]
-  sessions      Session[]
+  id                  String                      @id @default(cuid())
+  name                String?
+  email               String                      @unique
+  emailVerified       DateTime?
+  image               String?
+  problemStatus       UserStatusProblems[]
+  attempted           UserAttemptProblems[]       
+  createdProblems     Problem[]                   @relation("UserCreatedProblems")
+  favourites          Problem[]                   @relation("UserFavouriteProblems")
+  accounts            Account[]
+  sessions            Session[]
   // Optional for WebAuthn support
-  Authenticator Authenticator[]
+  Authenticator       Authenticator[]
  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model UserAttemptProblems {
+  id                    String       @default(cuid())
+  userId                String
+  problemId             String
+  attempts              Int         @default(0)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @default(now())
+  // Relationships
+  user                  User        @relation(fields: [userId], references: [id])
+  problem               Problem     @relation(fields: [problemId], references: [id])
+
+  @@unique([userId, problemId])
+}
+
+model UserStatusProblems {
+  id                    String       @default(cuid())
+  userId                String
+  problemId             String
+  status                Status
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @default(now())
+
+  // Relationships
+  user                  User        @relation(fields: [userId], references: [id])
+  problem               Problem     @relation(fields: [problemId], references: [id])
+
+  @@unique([userId, problemId])
+
 }
  
 model Account {
