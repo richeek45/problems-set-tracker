@@ -53,6 +53,7 @@ import { ColumnFieldSelection } from "./columnFieldSelection"
 import ProblemSettingDropdown from "./ProblemSettingDropdown"
 import MultiColumnDropdown from "./ui/multiSelectDropdown"
 import { filterTitle } from "~/utils/dataTable"
+import { useToast } from "./ui/use-toast"
 
 type SortMap = {
   [key in Difficulty]: number
@@ -402,15 +403,24 @@ export const DataTableSet = ({ data } : { data: ProblemRow[]}) => {
 const ToggleFavourite = ({ row } : { row:  Row<ProblemRow>} ) => {
   const router = useRouter();
   const utils = api.useUtils();
+  const { toast } = useToast();
 
   const toggleFavourite = api.problem.toggleProblemFavourite.useMutation({
     onSuccess: () => {
       router.refresh();
       utils.problem.getAllProblems.invalidate();
+      toast({
+        title: "FAVOURITED",
+        description: "The Problem is in your favourite list",
+      })
     },
     onError: (error) => {
       const errorMessage = error.data?.zodError?.fieldErrors.content![0];
-      console.log(error, "Error.........");    
+      console.log(error, "Error.........");   
+      toast({
+        title: "FAVOURITE FAILED",
+        description: "Failed to favourite the Problem ",
+      }) 
     }
   });
 
@@ -419,6 +429,10 @@ const ToggleFavourite = ({ row } : { row:  Row<ProblemRow>} ) => {
     size="sm"
     onClick={() => {
       toggleFavourite.mutate({ id: row.original.id })
+      toast({
+        title: "SAVING FAVOURITE",
+        description: "Saving to the favourite list...",
+      })
     }}
   >{row.getValue("favourites") ? <Star fill="#FBB03B" stroke="#FBB03B" /> : <Star stroke="#FBB03B" />}</Button>)
 

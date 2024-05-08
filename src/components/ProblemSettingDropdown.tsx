@@ -168,7 +168,7 @@ const ProblemSettingDropdown = ({ rowValues } : { rowValues: ProblemRow }) => {
             </DropdownMenuGroup>
 
 
-            <DropdownMenuItem onClick={handleDeleteProblem}>
+            <DropdownMenuItem disabled onClick={handleDeleteProblem}>
               Delete
             </DropdownMenuItem>
             <DropdownMenuItem disabled>

@@ -46,7 +46,7 @@ const MultiColumnDropdown = ({ table } : { table: Table<ProblemRow> }) => {
         <DropdownMenuItem onClick={() => {}}>
           Edit
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleDeleteSelected}>
+        <DropdownMenuItem disabled onClick={handleDeleteSelected}>
           Delete Selected
         </DropdownMenuItem>
         <DropdownMenuItem>
