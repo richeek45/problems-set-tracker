@@ -91,7 +91,7 @@ export function ConfirmDeleteAllDialog() {
   const router = useRouter();
   const { toast } = useToast()
 
-  const deleteAllProblems = api.problem.deleteAllProblems.useMutation({
+  const deleteAllProblems = api.problem.deleteSelectedProblems.useMutation({
     onSuccess: () => {
       router.refresh();
       api.useUtils().problem.getAllProblems.invalidate();

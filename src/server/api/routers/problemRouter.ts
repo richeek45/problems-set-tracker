@@ -19,8 +19,7 @@ const formSchema = z.object({
   difficulty: z.enum([Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD]),
   attempts: z.number(),
   tags: z.array(z.string()),
-  favourites: z.boolean(),
-  problem_number: z.number()
+  favourites: z.boolean()
 })
 
 const updateFormSchema = z.object({
@@ -162,7 +161,7 @@ export const problemRouter = createTRPCRouter({
   }),
 
   createManyProblem: protectedProcedure
-  .input(z.array(formSchema))
+  .input(z.array(formSchema.extend({ problem_number: z.number() })))
   .mutation(async ({ ctx, input }) => {
     const userId = ctx.session.user.id;
     const problemsData = input;
@@ -249,7 +248,7 @@ export const problemRouter = createTRPCRouter({
     return deletedProblem;
   }),
 
-  deleteAllProblems: protectedProcedure
+  deleteSelectedProblems: protectedProcedure
   .mutation(async ({ ctx }) => {
 
 

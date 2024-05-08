@@ -5,9 +5,19 @@ import { useState } from "react";
 import { Table } from "@tanstack/react-table";
 import { Checkbox } from "./checkbox";
 import { ProblemRow } from "../DataTableContent";
+import { api } from "~/trpc/react";
 
 const MultiColumnDropdown = ({ table } : { table: Table<ProblemRow> }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const deleteSelectedProblems = api.problem.deleteSelectedProblems.useMutation({
+
+  });
+
+
+  const handleDeleteSelected = () => {
+
+  } 
 
   return (
     <DropdownMenu open={isDropdownOpen} onOpenChange={(value) => setIsDropdownOpen(value)}>
@@ -36,7 +46,7 @@ const MultiColumnDropdown = ({ table } : { table: Table<ProblemRow> }) => {
         <DropdownMenuItem onClick={() => {}}>
           Edit
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDeleteSelected}>
           Delete Selected
         </DropdownMenuItem>
         <DropdownMenuItem>
