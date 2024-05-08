@@ -10,7 +10,6 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog"
 import { Button } from "~/components/ui/button"
-import { ToastAction } from "~/components/ui/toast"
 import { useToast } from "~/components/ui/use-toast"
 import { RowType } from "./inputFiles"
 import { useRouter } from "next/navigation";
@@ -27,10 +26,19 @@ export function ConfirmUploadDialog({ rows }: { rows: RowType[]}) {
     onSuccess: () => {
       router.refresh();
       api.useUtils().problem.getAllProblems.invalidate();
+      toast({
+        title: "SAVED SUCCESSFULLY",
+        description: "Problems saved successfully to the database",
+      })
+      setAlertDialogOpen(false);
     },
     onError: (error) => {
       const zodError = error.data?.zodError?.fieldErrors;
       console.error(zodError);
+      toast({
+        title: "ERROR SAVING",
+        description: "Something went wrong while saving. Please try again later!",
+      })
     }
   });
 
@@ -41,18 +49,17 @@ export function ConfirmUploadDialog({ rows }: { rows: RowType[]}) {
     if (!rows.length) {
       // add the toast for showing no rows are added
       toast({
-        title: "Error Saving",
+        title: "ERROR SAVING",
         description: "Either the problem sheet is not uploaded or wrong format is added!",
-        // action: (
-        //   <ToastAction altText="Goto schedule to undo">Undo</ToastAction>
-        // ),
       })
       return;
     }
 
-      // await createManyProblems.mutate(rows)
-      setAlertDialogOpen(false);
-
+      toast({
+        title: "SAVING",
+        description: "Saving the problems...",
+      })
+      createManyProblems.mutate(rows);
   }
 
 
@@ -79,51 +86,53 @@ export function ConfirmUploadDialog({ rows }: { rows: RowType[]}) {
 }
 
 export function ConfirmDeleteAllDialog() {
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
 
+  const router = useRouter();
+  const { toast } = useToast()
+
+  const deleteAllProblems = api.problem.deleteAllProblems.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      api.useUtils().problem.getAllProblems.invalidate();
+      toast({
+        title: "DELETED SUCCESSFULLY",
+        description: "All Problems were successfully deleted from the database",
+      })
+    },
+    onError: (error) => {
+      const zodError = error.data?.zodError?.fieldErrors;
+      console.error(zodError);
+      toast({
+        title: "ERROR SAVING",
+        description: "Something went wrong while saving. Please try again later!",
+      })
+    }
+  });
+
+  const handleDeleteProblems = () => {
+    deleteAllProblems.mutate();
+  }
 
 
   return (
-    <AlertDialog>
+    <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="outline">Show Dialog</Button>
+        <Button variant="outline">Delete Problems</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your
-            account and remove your data from our servers.
+            This action cannot be undone. This will permanently delete all the 
+            problems and remove your data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Continue</AlertDialogAction>
+          <AlertDialogAction onClick={handleDeleteProblems}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
-}
-
-
-
-export function ToastDemo() {
-  const { toast } = useToast()
-
-
-  return (
-    <Button
-      variant="outline"
-      onClick={() => {
-        toast({
-          title: "Scheduled: Catch up ",
-          description: "Friday, February 10, 2023 at 5:57 PM",
-          action: (
-            <ToastAction altText="Goto schedule to undo">Undo</ToastAction>
-          ),
-        })
-      }}
-    >
-      Add to calendar
-    </Button>
   )
 }
