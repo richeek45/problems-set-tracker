@@ -77,7 +77,7 @@ export function InputFile() {
           }
 
           if (Object.keys(cols).length) {
-            rows.push({ problem_number: row - 5, ...fixedRowProperties, difficulty: Difficulty.EASY,  ...cols });
+            rows.push({ problem_number: row - 4, ...fixedRowProperties, difficulty: Difficulty.EASY,  ...cols });
           }
         }
       })
@@ -128,7 +128,7 @@ export function InputFile() {
 
       console.log(rows, problemByTags);
       // find way to import different file formats
-    setRows(rows);
+      setRows(rows);
 
     } catch(error){
       console.log(error);

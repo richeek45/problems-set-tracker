@@ -19,8 +19,8 @@ const formSchema = z.object({
   difficulty: z.enum([Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD]),
   attempts: z.number(),
   tags: z.array(z.string()),
-  favourites: z.boolean()
-
+  favourites: z.boolean(),
+  problem_number: z.number()
 })
 
 const updateFormSchema = z.object({
@@ -194,6 +194,7 @@ export const problemRouter = createTRPCRouter({
             url: problem.url,
             difficulty: problem.difficulty,
             tags: problem.tags,
+            problem_number: problem.problem_number,
             userId
           })),
         })
