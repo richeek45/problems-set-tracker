@@ -162,22 +162,23 @@ export const problemRouter = createTRPCRouter({
     const userId = ctx.session.user.id;
     const problemsData = input;
 
+    const existingUrls = await ctx.db.problem.findMany({
+      where: {
+        OR: problemsData.map((problem) => ({
+          url: problem.url,
+        })),
+      },
+      select: {
+        url: true,
+      },
+    });
+
+    const existingUrlsSet = new Set(existingUrls.map((problem) => problem.url));
+    const uniqueProblemsData = problemsData.filter((problem) => !existingUrlsSet.has(problem.url));
+
     const transactions = await ctx.db.$transaction(async (prisma) => {
 
       try {
-        const existingUrls = await prisma.problem.findMany({
-          where: {
-            OR: problemsData.map((problem) => ({
-              url: problem.url,
-            })),
-          },
-          select: {
-            url: true,
-          },
-        });
-
-        const existingUrlsSet = new Set(existingUrls.map((problem) => problem.url));
-        const uniqueProblemsData = problemsData.filter((problem) => !existingUrlsSet.has(problem.url));
         
         // Add the fields in the Problem table
         const problems = await prisma.problem.createMany({
@@ -225,6 +226,8 @@ export const problemRouter = createTRPCRouter({
       catch(error) {
         return new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to bulk save problem data. Please try again!"})
       }
+    }, {
+      timeout: 10000 
     })
   }),
 
@@ -262,12 +265,26 @@ export const problemRouter = createTRPCRouter({
 
   }),
 
-  deleteSelectedProblems: protectedProcedure
-  .mutation(async ({ ctx }) => {
+  deleteMultipleProblems: protectedProcedure
+  .input(z.object({ problemIds: z.array(z.string())}))
+  .mutation(async ({ ctx, input }) => {
+    const { problemIds } = input;
+    
+    try {
+      await ctx.db.problem.deleteMany({
+        where: {
+          id: {
+            in: problemIds
+          }
+        }
+      })
 
+      console.log("deleted all the problems and its related fields...")
 
-    const deletedProblems = await ctx.db.problem.deleteMany({});
-    return deletedProblems;
+    } catch (error) {
+      return new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to delete selected problems!" })
+    }
+
   }),
 
   updateProblemById: protectedProcedure
