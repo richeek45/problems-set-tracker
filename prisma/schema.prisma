@@ -72,7 +72,7 @@ model UserAttemptProblems {
   updatedAt             DateTime    @default(now())
   // Relationships
   user                  User        @relation(fields: [userId], references: [id])
-  problem               Problem     @relation(fields: [problemId], references: [id])
+  problem               Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, problemId])
 }
@@ -87,7 +87,7 @@ model UserStatusProblems {
 
   // Relationships
   user                  User        @relation(fields: [userId], references: [id])
-  problem               Problem     @relation(fields: [problemId], references: [id])
+  problem               Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, problemId])
 
