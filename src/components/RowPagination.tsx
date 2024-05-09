@@ -12,10 +12,7 @@ import { Table } from "@tanstack/react-table"
 import { ProblemRow } from "./DataTableContent"
 
 export default function RowPagination({ table } : { table: Table<ProblemRow>}) {
-  // render the page state from range(-3, +3) in the pages
-  // show first page, show last page
-
-  const pageCount = table.getPageCount();
+  const pageCount = Math.floor(table.getFilteredRowModel().rows.length / 10);
   const currentPageIndex = table.getState().pagination.pageIndex;
   // const pageRange = Array(end - start + 1).fill().map((_, idx) => start + idx);
 
@@ -42,12 +39,12 @@ export default function RowPagination({ table } : { table: Table<ProblemRow>}) {
           </PaginationItem>
         ))}
 
-        <PaginationItem>
+        {(pageCount - 1) > 3 && <PaginationItem>
           <PaginationEllipsis />
-        </PaginationItem>
+        </PaginationItem>}
 
 
-        {![1, 2, pageCount - 1, pageCount].includes(currentPageIndex + 1) &&
+        {(pageCount - 1) > 2 && ![1, 2, pageCount - 1, pageCount].includes(currentPageIndex + 1) &&
           <PaginationItem>
             <Button
               size="sm"
@@ -62,7 +59,7 @@ export default function RowPagination({ table } : { table: Table<ProblemRow>}) {
           <PaginationEllipsis />
         </PaginationItem>}
 
-        {[pageCount - 1, pageCount].map(pageIndex => (
+        {(pageCount - 1) > 2 && [pageCount - 1, pageCount].map(pageIndex => (
           <PaginationItem key={pageIndex}>
             <Button
               size="sm"
