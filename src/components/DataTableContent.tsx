@@ -54,6 +54,7 @@ import ProblemSettingDropdown from "./ProblemSettingDropdown"
 import MultiColumnDropdown from "./ui/multiSelectDropdown"
 import { filterTitle } from "~/utils/dataTable"
 import { useToast } from "./ui/use-toast"
+import RowPagination from "./RowPagination"
 
 type SortMap = {
   [key in Difficulty]: number
@@ -377,22 +378,7 @@ export const DataTableSet = ({ data } : { data: ProblemRow[]}) => {
         </div>
 
         <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
+          <RowPagination table={table} />
         </div>
         </div>
     </div>

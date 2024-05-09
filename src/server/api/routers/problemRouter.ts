@@ -119,7 +119,6 @@ export const problemRouter = createTRPCRouter({
       },
     });
 
-    console.log(problems, "problems user signed in ...")
     return problems;
   }),
 
