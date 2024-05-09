@@ -44,8 +44,10 @@ const levenshteinEditDistance = (searchTerm: string, word: string) => {
 }
 
 export const filterTitle =  (row: Row<ProblemRow>, columnId: string, filterValue: string) => {
-  const words = row.original.url.title.toLowerCase().trim();
-  const filteredTerm = filterValue.toLowerCase().trim();
+  const problemNumber = row.original.url.problem_number;
+  const words = `${problemNumber}.${row.original.url.title.toLowerCase().trim()}`;
+  const filteredTerm = filterValue.toLowerCase().split(' ').join('');
+
   const threshold = 2;
 
   // compare the title with the search query and check if it has a score < 3
