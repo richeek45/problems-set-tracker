@@ -15,6 +15,8 @@ import { RowType } from "./inputFiles"
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { useState } from "react"
+import { Table } from "@tanstack/react-table";
+import { ProblemRow } from "./DataTableContent";
 
 export function ConfirmUploadDialog({ rows }: { rows: RowType[]}) {
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
@@ -85,40 +87,53 @@ export function ConfirmUploadDialog({ rows }: { rows: RowType[]}) {
   )
 }
 
-export function ConfirmDeleteAllDialog() {
+export function ConfirmDeleteAllDialog({ table } : { table: Table<ProblemRow> }) {
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
 
-  const router = useRouter();
-  const { toast } = useToast()
+  const selectedRows = Object.keys(table.getState().rowSelection);
+  const rowIds = selectedRows.map(rowId => table.getRow(rowId).original.id);
 
-  const deleteAllProblems = api.problem.deleteSelectedProblems.useMutation({
+  const router = useRouter();
+  const utils = api.useUtils();
+  const { toast } = useToast();
+
+  const deleteSelectedProblems = api.problem.deleteMultipleProblems.useMutation({
     onSuccess: () => {
       router.refresh();
-      api.useUtils().problem.getAllProblems.invalidate();
+      utils.problem.getAllProblems.invalidate();
       toast({
-        title: "DELETED SUCCESSFULLY",
-        description: "All Problems were successfully deleted from the database",
+        title: "DELETED SELECTED PROBLEMS SUCCESSFULLY",
+        description: "Problems saved successfully to the database",
       })
-    },
+      setAlertDialogOpen(false);
+      
+    }, 
     onError: (error) => {
-      const zodError = error.data?.zodError?.fieldErrors;
-      console.error(zodError);
-      toast({
-        title: "ERROR SAVING",
-        description: "Something went wrong while saving. Please try again later!",
-      })
+      const errorMessage = error.data?.zodError?.fieldErrors.content![0];
+      console.log(error, "Error.........");
+      if (errorMessage) {
+        toast({
+          title: "ERROR DELETING SELECTED PROBLEMS",
+          description: errorMessage,
+        })
+      } else {
+        toast({
+          title: "ERROR DELETING",
+          description: "Failed to delete selected problems!",
+        })
+      }
     }
   });
 
-  const handleDeleteProblems = () => {
-    deleteAllProblems.mutate();
+  const handleDeleteSelected = () => {
+    deleteSelectedProblems.mutate({ problemIds: rowIds })
   }
 
 
   return (
     <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="outline">Delete Problems</Button>
+        <Button size="sm" variant="ghost" disabled={!rowIds.length} className="text-black">Delete</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -130,7 +145,7 @@ export function ConfirmDeleteAllDialog() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteProblems}>Continue</AlertDialogAction>
+          <AlertDialogAction onClick={handleDeleteSelected}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

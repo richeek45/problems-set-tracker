@@ -55,6 +55,7 @@ import MultiColumnDropdown from "./ui/multiSelectDropdown"
 import { filterTitle } from "~/utils/dataTable"
 import { useToast } from "./ui/use-toast"
 import RowPagination from "./RowPagination"
+import { ConfirmDeleteAllDialog } from "./confirmUploadDialog"
 
 type SortMap = {
   [key in Difficulty]: number
@@ -236,7 +237,10 @@ export const DataTableSet = ({ data } : { data: ProblemRow[]}) => {
       enableHiding: false,
       header: ({ column, table}) => {
         return (
+          <>
+          <ConfirmDeleteAllDialog table={table} />
           <MultiColumnDropdown table={table} />
+          </>
         )
       },
       cell: ({ row }) => {
