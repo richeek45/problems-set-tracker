@@ -45,7 +45,7 @@ const levenshteinEditDistance = (searchTerm: string, word: string) => {
 
 export const filterTitle =  (row: Row<ProblemRow>, columnId: string, filterValue: string) => {
   const problemNumber = row.original.url.problem_number;
-  const words = `${problemNumber}.${row.original.url.title.toLowerCase().trim()}`;
+  const words = `${problemNumber}.${row.original.url.title.toLowerCase().split(' ').join('')}`;
   const filteredTerm = filterValue.toLowerCase().split(' ').join('');
 
   const threshold = 2;

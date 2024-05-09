@@ -19,9 +19,6 @@ export default function RowPagination({ table } : { table: Table<ProblemRow>}) {
   const currentPageIndex = table.getState().pagination.pageIndex;
   // const pageRange = Array(end - start + 1).fill().map((_, idx) => start + idx);
 
-
-  console.log(pageCount, currentPageIndex)
-
   return (
     <Pagination>
       <PaginationContent>
