@@ -62,7 +62,7 @@ const ProblemSettingDropdown = ({ rowValues } : { rowValues: ProblemRow }) => {
       utils.problem.getAllProblems.invalidate();
       toast({
         title: "DELETED",
-        description: "Successfully marked the problem as complete!",
+        description: "Successfully deleted the problem!",
       })
     },
     onError: (error) => {
@@ -77,7 +77,11 @@ const ProblemSettingDropdown = ({ rowValues } : { rowValues: ProblemRow }) => {
 
   const handleDeleteProblem = () => {
     // test delete 
-    // deleteProblemById.mutate({ problemId: rowValues.id })
+    deleteProblemById.mutate({ problemId: rowValues.id })
+    toast({
+      title: "DELETING",
+      description: "Deleting the problem!",
+    })  
   }
 
   const resetProgress = () => {
@@ -168,7 +172,7 @@ const ProblemSettingDropdown = ({ rowValues } : { rowValues: ProblemRow }) => {
             </DropdownMenuGroup>
 
 
-            <DropdownMenuItem disabled onClick={handleDeleteProblem}>
+            <DropdownMenuItem onClick={handleDeleteProblem}>
               Delete
             </DropdownMenuItem>
             <DropdownMenuItem disabled>

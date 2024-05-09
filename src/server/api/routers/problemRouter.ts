@@ -102,7 +102,6 @@ export const problemRouter = createTRPCRouter({
     // const { skip, take } = input;
     const userId = ctx.session.user.id;
 
-
     const problems = await ctx.db.problem.findMany({
       include: { 
         favouritedBy: {
@@ -124,8 +123,6 @@ export const problemRouter = createTRPCRouter({
 
   getAllProblems: publicProcedure.query(async ({ ctx }) => {
     const problems = await ctx.db.problem.findMany();
-
-    console.log(problems, "aall problemss...")
     return problems;
   }),
 
@@ -180,11 +177,8 @@ export const problemRouter = createTRPCRouter({
         });
 
         const existingUrlsSet = new Set(existingUrls.map((problem) => problem.url));
-        
         const uniqueProblemsData = problemsData.filter((problem) => !existingUrlsSet.has(problem.url));
         
-        console.log(existingUrls)
-
         // Add the fields in the Problem table
         const problems = await prisma.problem.createMany({
           data: uniqueProblemsData.map((problem) => ({
@@ -239,12 +233,33 @@ export const problemRouter = createTRPCRouter({
   .mutation(async ({ ctx, input }) => {
     // check if the user is deleting its own problem 
     const { problemId } = input;
-    const deletedProblem = await ctx.db.problem.delete({
-      where: { id: problemId },
-      
-    }) 
+    const userId = ctx.session.user.id;
 
-    return deletedProblem;
+    const transaction = await ctx.db.$transaction(async (prisma) => {
+      try {
+
+        const deletedProblem = await prisma.problem.delete({
+          where: { id: problemId }
+        })
+
+        const favouritesDeleted = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            favourites: {
+              disconnect: { id: problemId }
+            }
+          }
+        })        
+
+        console.log(deletedProblem, favouritesDeleted)
+        return deletedProblem;
+
+      } catch (error) {
+        console.error('Error deleting problem and related data:', error);
+        return new TRPCError({ code: "INTERNAL_SERVER_ERROR", "message": "Failed to delete Problem" });
+      }
+    })
+
   }),
 
   deleteSelectedProblems: protectedProcedure
