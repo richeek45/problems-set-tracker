@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { auth } from "~/server/auth"
+import { ThemeModeToggle } from "./ThemeModeToggle";
 
 export const Navbar = async () => {
   const session = await auth();
@@ -11,6 +12,7 @@ export const Navbar = async () => {
         <span className="sr-only">Acme Inc</span>
       </Link>
       <nav className="flex justify-end space-x-6 text-sm font-medium md:space-x-10">
+        <ThemeModeToggle/>
         <Link
           className="text-gray-500 transition-colors hover:text-gray-900 focus:text-gray-900 focus:outline-none disabled:pointer-events-none"
           href={session ? "/api/auth/signout" : "/api/auth/signin"}

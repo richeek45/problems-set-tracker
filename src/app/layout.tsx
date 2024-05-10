@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { TRPCReactProvider } from "~/trpc/react";
 import { Toaster } from "~/components/ui/toaster"
+import { ThemeProvider } from "~/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,10 +19,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
-        < Toaster />
+      <TRPCReactProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </TRPCReactProvider>
+      <Toaster/>
       </body>
     </html>
   );
