@@ -14,14 +14,12 @@ import { ProblemRow } from "./DataTableContent"
 const firstTwoPage = [1, 2];
 const firstPage = [1];
 
+
 export default function RowPagination({ table } : { table: Table<ProblemRow>}) {
   const pageCount = Math.floor(table.getFilteredRowModel().rows.length / 10);
   const currentPageIndex = table.getState().pagination.pageIndex;
-
   const firstPages = pageCount > 1 ? firstTwoPage : firstPage;
   // const pageRange = Array(end - start + 1).fill().map((_, idx) => start + idx);
-
-  console.log(pageCount)
 
   return (
     <Pagination>

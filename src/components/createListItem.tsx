@@ -85,7 +85,23 @@ const selectFieldParameters = [
     name: "tags",
     formLabel: "Tags",
     placeholder: "Select tags for the problem",
-    options: ["array", "tree", "graph", "string"]
+    options: [ 
+      "Array", 
+      "Matrix", 
+      "String", 
+      "Searching & Sorting", 
+      "LinkedList", 
+      "Binary Trees", 
+      "Binary Search Trees", 
+      "Greedy",
+      "BackTracking",
+      "Stacks & Queues",
+      "Heap",
+      "Graph",
+      "Dynamic Programming",
+      "Trie",
+      "Bit Manipulation"
+    ]
   }
 ]
 

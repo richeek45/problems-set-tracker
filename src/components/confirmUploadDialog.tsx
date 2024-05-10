@@ -22,12 +22,13 @@ export function ConfirmUploadDialog({ rows }: { rows: RowType[]}) {
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
 
   const router = useRouter();
+  const utils = api.useUtils();
   const { toast } = useToast()
 
   const createManyProblems = api.problem.createManyProblem.useMutation({
     onSuccess: () => {
       router.refresh();
-      api.useUtils().problem.getAllProblems.invalidate();
+      utils.problem.getAllProblems.invalidate();
       toast({
         title: "SAVED SUCCESSFULLY",
         description: "Problems saved successfully to the database",
@@ -36,7 +37,7 @@ export function ConfirmUploadDialog({ rows }: { rows: RowType[]}) {
     },
     onError: (error) => {
       const zodError = error.data?.zodError?.fieldErrors;
-      console.error(zodError);
+      console.error(error);
       toast({
         title: "ERROR SAVING",
         description: "Something went wrong while saving. Please try again later!",
@@ -87,11 +88,14 @@ export function ConfirmUploadDialog({ rows }: { rows: RowType[]}) {
   )
 }
 
+const getRowIds = (table: Table<ProblemRow>) => {
+  const selectedRows = Object.keys(table.getState().rowSelection);
+  const rowIds = selectedRows.length ? selectedRows?.map(rowId => table?.getRow(rowId)?.original?.id) : [];
+  return rowIds;
+}
+
 export function ConfirmDeleteAllDialog({ table } : { table: Table<ProblemRow> }) {
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
-
-  const selectedRows = Object.keys(table.getState().rowSelection);
-  const rowIds = selectedRows.map(rowId => table.getRow(rowId).original.id);
 
   const router = useRouter();
   const utils = api.useUtils();
@@ -99,6 +103,7 @@ export function ConfirmDeleteAllDialog({ table } : { table: Table<ProblemRow> })
 
   const deleteSelectedProblems = api.problem.deleteMultipleProblems.useMutation({
     onSuccess: () => {
+      table.toggleAllRowsSelected(false);
       router.refresh();
       utils.problem.getAllProblems.invalidate();
       toast({
@@ -126,14 +131,23 @@ export function ConfirmDeleteAllDialog({ table } : { table: Table<ProblemRow> })
   });
 
   const handleDeleteSelected = () => {
+    const rowIds = getRowIds(table);
     deleteSelectedProblems.mutate({ problemIds: rowIds })
+    toast({
+      title: "DELETING SELECTED PROBLEMS...",
+      description: "Deleting selected problems",
+    })
   }
-
 
   return (
     <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
       <AlertDialogTrigger asChild>
-        <Button size="sm" variant="ghost" disabled={!rowIds.length} className="text-black">Delete</Button>
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          disabled={!getRowIds(table)?.length} 
+          className="text-black"
+        >Delete</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
