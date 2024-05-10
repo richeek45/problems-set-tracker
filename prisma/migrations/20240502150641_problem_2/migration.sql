@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Problem" ADD COLUMN     "problem_number" SERIAL NOT NULL,
+ALTER COLUMN "updatedAt" SET DEFAULT CURRENT_TIMESTAMP;

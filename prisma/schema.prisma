@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+ 
+generator client {
+  provider = "prisma-client-js"
+}
+ 
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Status {
+  TODO
+  INPROGRESS
+  COMPLETED
+  REPEAT
+}
+
+model Problem {
+  id             String                   @id @default(cuid())
+  problem_number Int                      @default(autoincrement())
+  title          String                   
+  url            String                   
+  tags           String[]
+  favouritedBy   User[]                   @relation("UserFavouriteProblems")
+  status         UserStatusProblems[]
+  attempts       UserAttemptProblems[]
+  difficulty     Difficulty               @default(EASY)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime?                @default(now())
+  userId         String        
+  createdBy      User                     @relation("UserCreatedProblems", fields: [userId], references: [id])
+
+  @@unique([title, url, tags])
+}
+
+model User {
+  id                  String                      @id @default(cuid())
+  name                String?
+  email               String                      @unique
+  emailVerified       DateTime?
+  image               String?
+  problemStatus       UserStatusProblems[]
+  attempted           UserAttemptProblems[]       
+  createdProblems     Problem[]                   @relation("UserCreatedProblems")
+  favourites          Problem[]                   @relation("UserFavouriteProblems")
+  accounts            Account[]
+  sessions            Session[]
+  // Optional for WebAuthn support
+  Authenticator       Authenticator[]
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserAttemptProblems {
+  id                    String       @default(cuid())
+  userId                String
+  problemId             String
+  attempts              Int         @default(0)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @default(now())
+  // Relationships
+  user                  User        @relation(fields: [userId], references: [id])
+  problem               Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+}
+
+model UserStatusProblems {
+  id                    String       @default(cuid())
+  userId                String
+  problemId             String
+  status                Status
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @default(now())
+
+  // Relationships
+  user                  User        @relation(fields: [userId], references: [id])
+  problem               Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+
+}
+ 
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@id([provider, providerAccountId])
+}
+ 
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+ 
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+ 
+  @@id([identifier, token])
+}
+ 
+// Optional for WebAuthn support
+model Authenticator {
+  id                   String  @id @default(cuid())
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
