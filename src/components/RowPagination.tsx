@@ -38,7 +38,7 @@ export default function RowPagination({ table } : { table: Table<ProblemRow>}) {
             <Button
               size="sm"
               variant="outline"
-              style={pageIndex - 1 === currentPageIndex ? { backgroundColor: "blue", color: "#fff" } : { backgroundColor: "white" }}
+              className={pageIndex - 1 === currentPageIndex ? "bg-blue-500 text-white" : "bg-white text-black"}
               onClick={() => table.setPageIndex(pageIndex - 1)}
             >{pageIndex}</Button>
           </PaginationItem>
@@ -54,7 +54,7 @@ export default function RowPagination({ table } : { table: Table<ProblemRow>}) {
             <Button
               size="sm"
               variant="outline"
-              style={{ backgroundColor: "blue", color: "#fff" }}
+              className="bg-blue-500 text-white"
               onClick={() => table.setPageIndex(currentPageIndex - 1)}
             >{currentPageIndex + 1}</Button>
           </PaginationItem>
@@ -69,7 +69,7 @@ export default function RowPagination({ table } : { table: Table<ProblemRow>}) {
             <Button
               size="sm"
               variant="outline"
-              style={pageIndex - 1 === currentPageIndex ? { backgroundColor: "blue", color: "#fff" } : { backgroundColor: "white" }}
+              className={pageIndex - 1 === currentPageIndex ? "bg-blue-500 text-white" : "bg-white text-black"}
               onClick={() => table.setPageIndex(pageIndex - 1)}
             >{pageIndex}</Button>
           </PaginationItem>
